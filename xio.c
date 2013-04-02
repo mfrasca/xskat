@@ -192,6 +192,7 @@ VOID drop_card(i,s)
 int i,s;
 {
   int sn,sna[3],x1[3],y1[3],x2[3],y2[3];
+  static int l2r[3];
 
   if (stich==10) backopen[s]=0;
   for (sn=0;sn<numsp;sn++) {
@@ -219,12 +220,14 @@ int i,s;
       sptzmrk=1;
       putamark(sn,spieler);
     }
-    x2[sn]=desk[sn].stichx+vmh*desk[sn].cardw;
+    if (!vmh) l2r[sn]=trickl2r[sn];
+    x2[sn]=desk[sn].stichx+
+      (l2r[sn]?vmh:s==left(sn)?0:s==sn?1:2)*desk[sn].cardw;
     y2[sn]=desk[sn].stichy;
   }
   movecard(numsp,sna,x1,y1,x2,y2);
   for (sn=0;sn<numsp;sn++) {
-    putcard(sn,cards[i],desk[sn].stichx+vmh*desk[sn].cardw,desk[sn].stichy);
+    putcard(sn,cards[i],x2[sn],desk[sn].stichy);
   }
   stcd[vmh]=cards[i];
   stichopen=vmh+1;
@@ -394,8 +397,10 @@ xskat [-display|-d display] [-geometry|-g geometry] [-font|-fn font]\n\
   [-color] [-mono] [-color1 color] .. [-color4 color] [-large] [-small]\n\
   [-up] [-down] [-alt] [-seq] [-list|-l filename] [-alist] [-nlist] [-tlist]\n\
   [-log filename] [-dolog] [-nolog] [-fmt] [-unfmt] [-game filename]\n\
+  [-briefmsg] [-verbosemsg] [-trickl2r] [-notrickl2r]\n\
   [-lang language] [-start player#] [-s1 -4..4] [-s2 -4..4] [-s3 -4..4]\n\
   [-ramsch] [-noramsch] [-ramschonly] [-sramsch] [-nosramsch]\n\
+  [-skattolast] [-skattoloser]\n\
   [-kontra] [-nokontra] [-kontra18] [-bock] [-nobock] [-bockramsch]\n\
   [-bockevents 1..255] [-resumebock] [-noresumebock]\n\
   [-spitze] [-spitze2] [-nospitze] [-revolution] [-norevolution]\n\
@@ -1091,6 +1096,8 @@ VOID xinitplayers()
     hints[sn]=hints[0];
     blatt[sn]=blatt[0];
     lang[sn]=lang[0];
+    briefmsg[sn]=briefmsg[0];
+    trickl2r[sn]=trickl2r[0];
     geom_f[sn]=geom_f[0];
     geom_x[sn]=geom_x[0];
     geom_y[sn]=geom_y[0];
@@ -1381,6 +1388,14 @@ int sn;
   if (!langset[sn]) {
     lang[sn]=langidx(XGetDefault(dpy[sn],prog_name,"language"));
   }
+  if (!briefmsgset[sn] &&
+      (res=XGetDefault(dpy[sn],prog_name,"briefmsg"))) {
+    briefmsg[sn]=istrue(res);
+  }
+  if (!trickl2rset[sn] &&
+      (res=XGetDefault(dpy[sn],prog_name,"trickl2r"))) {
+    trickl2r[sn]=istrue(res);
+  }
   if (!sn) {
     if (!game_file) {
       if (!getdeffn(prog_name,&game_file,"game","")) {
@@ -1406,6 +1421,9 @@ int sn;
     }
     if (!sramschset && (res=XGetDefault(dpy[sn],prog_name,"sramsch"))) {
       playsramsch=istrue(res);
+    }
+    if (!rskatloserset && (res=XGetDefault(dpy[sn],prog_name,"skattoloser"))) {
+      rskatloser=istrue(res);
     }
     if (!kontraset && (res=XGetDefault(dpy[sn],prog_name,"kontra"))) {
       playkontra=atoi(res);
@@ -1589,6 +1607,7 @@ char *argv[];
   nimmstich[0][0]=nimmstich[1][0]=nimmstich[2][0]=7;
   keyboard[0]=keyboard[1]=keyboard[2]=1;
   abkuerz[0]=abkuerz[1]=abkuerz[2]=1;
+  trickl2r[0]=trickl2r[1]=trickl2r[2]=1;
   prog_name=strrchr(argv[0],'/');
   if (prog_name) prog_name++;
   else prog_name=argv[0];
@@ -1713,6 +1732,14 @@ char *argv[];
       playsramsch=0;
       sramschset=1;
     }
+    else if (!strcmp(argv[1],"-skattolast")) {
+      rskatloser=0;
+      rskatloserset=1;
+    }
+    else if (!strcmp(argv[1],"-skattoloser")) {
+      rskatloser=1;
+      rskatloserset=1;
+    }
     else if (!strcmp(argv[1],"-nokontra")) {
       playkontra=0;
       kontraset=1;
@@ -1804,6 +1831,22 @@ char *argv[];
     else if (!strcmp(argv[1],"-nohint")) {
       hints[0]=0;
       hintsset[0]=1;
+    }
+    else if (!strcmp(argv[1],"-briefmsg")) {
+      briefmsg[0]=1;
+      briefmsgset[0]=1;
+    }
+    else if (!strcmp(argv[1],"-verbosemsg")) {
+      briefmsg[0]=0;
+      briefmsgset[0]=1;
+    }
+    else if (!strcmp(argv[1],"-trickl2r")) {
+      trickl2r[0]=1;
+      trickl2rset[0]=1;
+    }
+    else if (!strcmp(argv[1],"-notrickl2r")) {
+      trickl2r[0]=0;
+      trickl2rset[0]=1;
     }
     else if (!strcmp(argv[1],"-irc")) {
       irc_play=1;
@@ -2091,8 +2134,10 @@ GC *gcp;
 {
   int xyarr[4];
 
-  xyarr[0]=desk[sn].playx+(c%10)*desk[sn].cardx+7*desk[sn].f/desk[sn].q;
-  xyarr[1]=desk[sn].playy-5*desk[sn].f/desk[sn].q;
+  xyarr[0]=(c<30?desk[sn].playx:desk[sn].skatx)+
+    (c%10)*desk[sn].cardx+7*desk[sn].f/desk[sn].q;
+  xyarr[1]=(c<30?desk[sn].playy:desk[sn].skaty)
+    -5*desk[sn].f/desk[sn].q;
   xyarr[2]=xyarr[0]+desk[sn].cardx-16*desk[sn].f/desk[sn].q+1;
   xyarr[3]=xyarr[1];
   XDrawLine(dpy[sn],win[sn],gcp[sn],xyarr[0],xyarr[1],xyarr[2],xyarr[3]);
@@ -2102,19 +2147,19 @@ GC *gcp;
 VOID show_hint(sn,c,d)
 int sn,c,d;
 {
-  static int lm[3];
+  static int lm[3][2];
 
-  if (lm[sn]) {
-    hint_line(sn,lm[sn]-1,gcbck);
+  if (lm[sn][c]) {
+    hint_line(sn,lm[sn][c]-1,gcbck);
   }
   if (d) {
     change_gc(sn,mkpix[sn],gc);
-    hint_line(sn,c,gc);
+    hint_line(sn,hintcard[c],gc);
     change_gc(sn,fgpix[sn],gc);
-    lm[sn]=c+1;
+    lm[sn][c]=hintcard[c]+1;
   }
   else {
-    lm[sn]=0;
+    lm[sn][c]=0;
   }
 }
 
@@ -2269,12 +2314,21 @@ int s,n;
 VOID initscr(sn,sor)
 int sn,sor;
 {
-  int i,x,y,c;
+  int i,x,y,c0,c1;
 
   if (phase==WEITER || phase==REVOLUTION) return;
   if (sor) {
-    if (phase==SPIELEN && hintcard!=-1) c=cards[hintcard];
-    else c=-1;
+    c0=-1;
+    c1=-1;
+    if (hintcard[0]!=-1) {
+      if (phase==SPIELEN) {
+	c0=cards[hintcard[0]];
+      }
+      else if (phase==DRUECKEN) {
+	if (hintcard[0]<30) c0=cards[hintcard[0]];
+	if (hintcard[1]<30) c1=cards[hintcard[1]];
+      }
+    }
     if (sor!=2) sort(sn);
     else {
       if (skatopen) draw_skat(spieler);
@@ -2285,10 +2339,16 @@ int sn,sor;
       }
     }
     for (i=0;i<10;i++) {
-      if (c>=0 && c==cards[sn*10+i]) hintcard=sn*10+i;
-      if (phase==SPIELEN && !iscomp(sn) && sn==(ausspl+vmh)%3 &&
-	  hints[sn] && hintcard!=-1) {
-	show_hint(sn,hintcard,1);
+      if (c0>=0 && c0==cards[sn*10+i]) hintcard[0]=sn*10+i;
+      if (c1>=0 && c1==cards[sn*10+i]) hintcard[1]=sn*10+i;
+      if (hintcard[0]!=-1 && !iscomp(sn) && hints[sn]) {
+	if (phase==SPIELEN && sn==(ausspl+vmh)%3) {
+	  show_hint(sn,0,1);
+	}
+	else if (phase==DRUECKEN && sn==spieler) {
+	  show_hint(sn,0,1);
+	  show_hint(sn,1,1);
+	}
       }
       putcard(sn,cards[sn*10+i],
 	      desk[sn].playx+i*desk[sn].cardx,desk[sn].playy);
@@ -2642,6 +2702,16 @@ int sn,x,y;
   if (c) {
     c--;
     swap(&cards[10*sn+c],&cards[drkcd+30]);
+    if (hintcard[0]==10*sn+c) {
+      hintcard[0]=drkcd+30;
+      if (hints[sn]) show_hint(sn,0,0);
+    }
+    else if (hintcard[0]==drkcd+30) hintcard[0]=10*sn+c;
+    if (hintcard[1]==10*sn+c)  {
+      hintcard[1]=drkcd+30;
+      if (hints[sn]) show_hint(sn,1,0);
+    }
+    else if (hintcard[1]==drkcd+30) hintcard[1]=10*sn+c;
     sna[0]=sn;
     x1[0]=desk[sn].playx+c*desk[sn].cardx;
     y1[0]=desk[sn].playy;
@@ -2658,6 +2728,10 @@ int sn,x,y;
       y>=desk[sn].pboxy+1 &&
       y<=desk[sn].pboxy+16*desk[sn].f/desk[sn].q) inv_fbox(spieler,1);
   else return 0;
+  if (hints[sn] && hintcard[0]!=-1) {
+    show_hint(sn,0,0);
+    show_hint(sn,1,0);
+  }
   stdwait();
   inv_fbox(spieler,0);
   if (trumpf==5 && (((cards[30]&7)==BUBE) || ((cards[31]&7)==BUBE))) {
@@ -2860,6 +2934,7 @@ int f;
   int x,y,w,sn,snn,newsn=-1;
   char clr[100];
   static int actsn=-1,wsn=-1,wtime;
+  static int ur[3];
 
   for (sn=0;sn<numsp;sn++) {
     switch (phase) {
@@ -2875,6 +2950,11 @@ int f;
       if (numsp==1) newsn=0;
       break;
     case SPIELEN:
+      if (stich==1 && trumpf==5 && !ur[sn]) {
+	di_info(sn,-1);
+	ur[sn]=1;
+      }
+      if (stich==2) ur[sn]=0;
       if (sn==(ausspl+vmh)%3) newsn=sn;
       break;
     case SCHENKEN:
@@ -2910,14 +2990,14 @@ int f;
   if (f && actsn>=0) {
     if (phase!=WEITER && phase!=REVOLUTION) di_info(f-1,actsn);
   }
-  if (numsp==1) return;
   if (actsn==-1) wtime=0;
+  if (phase==REIZEN && bockspiele && !ramschspiele) wtime=15*1000;
   if (!wtime || wtime>=15*1000) {
     if (wsn!=-1 && (actsn!=wsn ||
 		    wtime==16*1000 ||
-		    (phase!=SPIELEN && phase!=NIMMSTICH))) {
+		    (phase!=REIZEN && phase!=SPIELEN && phase!=NIMMSTICH))) {
       x=desk[wsn].w/2;
-      y=desk[wsn].playy-2*charh[wsn];
+      y=(desk[wsn].pboxy+desk[wsn].playy)/2;
       w=5*desk[wsn].cardw/XTextWidth(dfont[wsn]," ",1)+1;
       if (w>99) w=99;
       clr[w]=0;
@@ -2925,13 +3005,21 @@ int f;
       v_gtext(wsn,x,y,0,clr);
       wsn=-1;
       if (wtime==16*1000) wtime-=1500;
-      if (phase!=SPIELEN && phase!=NIMMSTICH) wtime=0;
+      if (phase!=REIZEN && phase!=SPIELEN && phase!=NIMMSTICH) wtime=0;
     }
-    if (wtime==15*1000 && (phase==SPIELEN || phase==NIMMSTICH)) {
+    if (wtime==15*1000 &&
+	(phase==REIZEN || phase==SPIELEN || phase==NIMMSTICH)) {
       wsn=actsn;
       x=desk[wsn].w/2;
-      y=desk[wsn].playy-2*charh[wsn];
-      v_gtext(wsn,x,y,0,textarr[TX_DU_BIST_DRAN].t[lang[wsn]]);
+      y=(desk[wsn].pboxy+desk[wsn].playy)/2;
+      if (phase==REIZEN) {
+	if (bockspiele && !ramschspiele) {
+	  v_gtext(wsn,x,y,0,textarr[TX_BOCK_SPIEL].t[lang[wsn]]);
+	}
+      }
+      else if (numsp!=1) {
+	v_gtext(wsn,x,y,0,textarr[TX_DU_BIST_DRAN].t[lang[wsn]]);
+      }
     }
   }
   wtime+=50;

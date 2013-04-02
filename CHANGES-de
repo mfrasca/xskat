@@ -1,0 +1,81 @@
+
+Änderungen in 3.4 (29 Okt 2000):
+ - Ramsch-Variante: Skat geht an Verlierer
+ - Computer kann zu drückende Karten vorschlagen
+ - Gesprächigere Benutzeroberfläche
+ - Platzierung der Stich-Karten wählbar
+ - Deutsches Benutzerhandbuch
+ - Verbesserte Computer-Spieler
+
+Änderungen in 3.3 (25 Mär 2000):
+ - Umgebungsvariable LANG wird beachtet
+ - Gewonnene/verlorene Spiele werden gezählt
+ - IRC-Modus verbessert
+ - Konfigurierbare Tastatur-Steuerung
+ - Verbesserte Computer-Spieler
+
+Änderungen in 3.2 (20 Sep 1999):
+ - Steuerung per Tastatur möglich
+ - Bessere Farbverwaltung bei wenigen verfügbaren Farben
+ - Deutsches Blatt mit braunen Eicheln
+ - Ursprünglicher Skat wird nach dem Spiel gezeigt
+ - Wiederholung bleibt nach Betrachten des Protokolls möglich
+ - Verbesserte Computer-Spieler
+
+Änderungen in 3.1 (22 Jun 1999):
+ - Deutsches Blatt und schönere Kartenbilder
+ - Neue offizielle Regeln:
+ -  Verlorener Hand zählt doppelt
+ -  Grand Ouvert Multiplikator ist 24
+ - Abhilfe bei Telnet-Fehler (siehe README.IRC-de)
+ - Sprache und Blatt interaktiv änderbar
+ - Abkürzung konfigurierbar
+ - Verbesserte Computer-Spieler
+
+Änderungen in 3.0 (03 Dez 1998):
+ - Spiel über Internet Relay Chat wird unterstützt
+ - Computer kann eine Karte vorschlagen
+ - Abkürzung in allen Spielen möglich
+ - 3D Darstellung
+
+Änderungen in 2.3 (09 Sep 1998):
+ - Mehr Variationen: Spitze, Revolution, Klopfen, Schenken
+ - Abkürzung möglich, wenn Null sicher ist
+ - Konfigurierbare Geschwindigkeit beim Geben
+ - Computer kann Kontra und Re sagen
+ -  und selber Null ouvert spielen
+ - Andere kleinere Verbesserungen des Computer-Spiels
+
+Änderungen in 2.2 (05 Mär 1998):
+ - Bock- und Ramschrunden implementiert
+ - Interaktiv änderbare Optionen werden gespeichert
+ - Erweiterte Wiederholfunktion
+ - Null und Ramsch verbessert
+
+Änderungen in 2.1 (15 Dez 1997):
+ - Kontra und Re
+ - Schieberamsch implementiert
+ - Sofortige Spielwiederholung im Einzelspieler-Modus
+ - Dauer der Stichaufnahme im Spiel einstellbar
+ - Verbesserte Computer-Spieler
+
+Änderungen in 2.0 (08 Sep 1997):
+ - Es ist möglich, Ramsch zu spielen
+ - Konfigurierbare Verzögerung nach jedem Stich
+ - ~/ ist in Dateinamen erlaubt
+
+Änderungen in 1.7 (20 Mai 1997):
+ - Verbesserte Computer-Spieler
+ - Wählbare Computer-Strategie
+ - Große Karten für große Bildschirme
+ - Konfigurierbare Menü-Taste
+ - Optionale Turnier-Punktzählung
+ - Formatierte und unformatierte Protokolle
+ - Proportionale Zeichensätze funktionieren
+ - Farben der Karten umdefinierbar
+ - Nur-Computer-Modus
+
+Frühere Versionen:
+ - Erstveröffentlichung: 1.6 (19 Feb 1996)
+ - Erste X11-Portierung: 1.0 (13 Aug 1995)
+ - Erstveröffentlichung für Atari: ST-SKAT (1988)

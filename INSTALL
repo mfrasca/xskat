@@ -1,0 +1,13 @@
+#!/bin/sh
+
+# Create Makefile from Imakefile
+./configure
+
+# Compile the program
+make
+
+# Start the program
+./xskat
+
+# Final install (as root)
+make install install.man
