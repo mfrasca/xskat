@@ -1,7 +1,7 @@
 
 /*
     xskat - a card game for 1 to 3 players.
-    Copyright (C) 2000  Gunter Gerhardt
+    Copyright (C) 2004  Gunter Gerhardt
 
     This program is free software; you can redistribute it freely.
     Use it at your own risk; there is NO WARRANTY.
@@ -108,6 +108,25 @@ EXTERN unsigned char *de_gif[4][8]
 #endif
 ;
 
+EXTERN unsigned char *backsd_gif[1]
+#ifdef BITMAPS_C
+= {
+  back_gif
+}
+#endif
+;
+
+EXTERN unsigned char ggde_flg[4][8]
+#ifdef BITMAPS_C
+= {
+  {1,0,0,0,0,1,1,1},
+  {1,0,0,0,0,1,1,1},
+  {1,1,0,0,0,1,1,1},
+  {1,1,0,0,0,1,1,1}
+}
+#endif
+;
+
 EXTERN unsigned char de_flg[4][8]
 #ifdef BITMAPS_C
 = {
@@ -115,6 +134,62 @@ EXTERN unsigned char de_flg[4][8]
   {1,0,0,0,0,1,1,0},
   {0,0,0,0,0,1,1,1},
   {2,0,0,0,0,0,1,0}
+}
+#endif
+;
+
+EXTERN struct
+{
+  char *name;
+  unsigned char **pos;
+} map_gif[45]
+#ifdef BITMAPS_C
+= {
+  {"back",&backsd_gif[0]},
+  {"heb",&fr_gif[1][2]},
+  {"hed",&fr_gif[1][1]},
+  {"hek",&fr_gif[1][0]},
+  {"kab",&fr_gif[0][2]},
+  {"kad",&fr_gif[0][1]},
+  {"kak",&fr_gif[0][0]},
+  {"krb",&fr_gif[3][2]},
+  {"krd",&fr_gif[3][1]},
+  {"krk",&fr_gif[3][0]},
+  {"pib",&fr_gif[2][2]},
+  {"pid",&fr_gif[2][1]},
+  {"pik",&fr_gif[2][0]},
+  {"e10",&de_gif[3][1]},
+  {"e7",&de_gif[3][7]},
+  {"e8",&de_gif[3][6]},
+  {"e9",&de_gif[3][5]},
+  {"ea",&de_gif[3][0]},
+  {"ek",&de_gif[3][2]},
+  {"eo",&de_gif[3][3]},
+  {"eu",&de_gif[3][4]},
+  {"g10",&de_gif[2][1]},
+  {"g7",&de_gif[2][7]},
+  {"g8",&de_gif[2][6]},
+  {"g9",&de_gif[2][5]},
+  {"ga",&de_gif[2][0]},
+  {"gk",&de_gif[2][2]},
+  {"go",&de_gif[2][3]},
+  {"gu",&de_gif[2][4]},
+  {"h10",&de_gif[1][1]},
+  {"h7",&de_gif[1][7]},
+  {"h8",&de_gif[1][6]},
+  {"h9",&de_gif[1][5]},
+  {"ha",&de_gif[1][0]},
+  {"hk",&de_gif[1][2]},
+  {"ho",&de_gif[1][3]},
+  {"hu",&de_gif[1][4]},
+  {"s10",&de_gif[0][1]},
+  {"s7",&de_gif[0][7]},
+  {"s8",&de_gif[0][6]},
+  {"s9",&de_gif[0][5]},
+  {"sa",&de_gif[0][0]},
+  {"sk",&de_gif[0][2]},
+  {"so",&de_gif[0][3]},
+  {"su",&de_gif[0][4]}
 }
 #endif
 ;

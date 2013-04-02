@@ -1,7 +1,7 @@
 
 /*
     xskat - a card game for 1 to 3 players.
-    Copyright (C) 2000  Gunter Gerhardt
+    Copyright (C) 2004  Gunter Gerhardt
 
     This program is free software; you can redistribute it freely.
     Use it at your own risk; there is NO WARRANTY.
@@ -27,12 +27,9 @@
 #include "defs.h"
 #include "text.h"
 
-#define VERSION   " X S K A T   3.4 "
-#define COPYRIGHT "Copyright 2000 © Gunter Gerhardt"
-#define EMAIL     "(gerhardt@draeger.com)"
-#define HOMEPAGES "XSkat Home Pages"
-#define URL1      "http://www.gulu.net/xskat/"
-#define URL2      "http://private.addcom.de/g/xskat/"
+#define VERSION   " X S K A T   4.0 "
+#define COPYRIGHT "Copyright 2004 © Gunter Gerhardt"
+#define URL       "http://www.xskat.de"
 
 static char *ger_text[]={
   "Null","Karo","Herz","Pik","Kreuz","Grand","Ramsch",
@@ -67,20 +64,28 @@ static char *ger_text[]={
   "Protokoll","Weiter"," Protokoll ",
   "Im Skat ist:",
   "Im Skat war:",
+  "Ursprünglicher Skat",
   "Gereizt bis:",
   "Gewonnen mit:",
   "Verloren mit:",
   "Spielliste"," Spielliste ",VERSION,
-  COPYRIGHT,EMAIL,HOMEPAGES,URL1,URL2,
+  COPYRIGHT,URL,
+  "Andere Kartenbilder zum Download",
+  "sind unter obiger URL zu finden.",
+  "Verwendung der Kartenbilder",
+  "mit Genehmigung der",
+  "Spielkartenfabrik Altenburg GmbH,",
+  "Marke ASS Altenburger",
   "Sortieren","Aufwärts","Abwärts","Alternierend","Sequentiell",
   "Normal",
   "Gereizt bis:","Gespielt wird:","Letzter Stich:",
   "Du bist dran !","Vordefiniertes Spiel","Speichern",
   "Dieses Programm ist freie Software;",
   "es kann frei verbreitet werden.",
-  "Verwendung auf eigenes Risiko;",
+  "Benutzung auf eigenes Risiko;",
   "es gibt KEINE GARANTIE.",
-  "Optionen"," Computer ","Strategie","passe","sage 18",
+  "Optionen"," Computer ","Spielstärke","--","-","0","+","++",
+  "Name",
   "Vorschläge"," Varianten ",
   "Ramsch spielen","Immer",
   " Ramsch-Varianten ",
@@ -92,7 +97,7 @@ static char *ger_text[]={
   "VH schob:","MH schob:","HH schob:",
   "Kontra sagen","mit Kontra","ab 18","Kontra"," Kontra ! ","Re","von ",
   "Wiederholen"," Spiel wiederholen ","mit den Karten von","mir",
-  "Vorhand wechselt:",
+  "Vorhand wechselt:","Start","Zurück",
   " Geschwindigkeit ","Nimm Stich nach:","Sekunden","Maus-Klick",
   "Abkürzung","Fragen","Nie",
   "Bock-Runden","+Ramsch","Bock-Runden fortsetzen",
@@ -123,12 +128,26 @@ static char *ger_text[]={
   "Sprache","Deutsch","English",
   "Alte Regeln",
   "Ein Maus-Klick oder ESC / F1","bringt dieses Menü zur Anzeige",
-  " Internet Relay Chat ",
+  " Mehrspieler-Modus ",
+  " Lokales Spiel über LAN ",
+  "Eigenen Spieltisch eröffnen",
+  "An anderem Tisch Platz nehmen",
+  "Spieler2 einladen:",
+  "Spieler3 einladen:",
+  "Rechnername oder IP-Adresse",
+  "Spieltisch eröffnen",
+  "Spieltisch:",
+  "Zugriff auf X-Server wird erlaubt!",
+  "Ggf. nach dem Spiel zurücknehmen.",
+  "Siehe: man xhost",
+  "Am Tisch Platz nehmen",
+  "(Schließt dieses Fenster)",
+  " Internet-Spiel über IRC ",
   "IRC-Verbindung herstellen mit:",
-  "Zur IRC-Konfiguration siehe:",
-  "man xskat-de",
+  "Erweiterte IRC-Konfiguration siehe:",
+  "man xskat",
   "Verschiedene Versionen",
-  "(Probleme? README.IRC-de oder 'man xskat-de' ANMERKUNGEN lesen!)",
+  "(Probleme? README.IRC-de oder 'man xskat' ANMERKUNGEN lesen!)",
   "Nicht auf diesem Kanal !",
   "Nur ein Spieler sollte /go sagen !  Nochmal.",
   "Sollte das /go%s sein ?",
@@ -193,20 +212,28 @@ static char *eng_text[]={
   "Log","Continue"," Log ",
   "Skat is:",
   "Skat was:",
+  "Original Skat",
   "Last bid:",
   "Won with:",
   "Lost with:",
   "Game list"," Game list ",VERSION,
-  COPYRIGHT,EMAIL,HOMEPAGES,URL1,URL2,
+  COPYRIGHT,URL,
+  "Download other card images",
+  "from the URL given above.",
+  "Card images used",
+  "with permission by",
+  "Spielkartenfabrik Altenburg GmbH,",
+  "Marke ASS Altenburger",
   "Sort","Up","Down","Alternating","Sequential",
   "Normal",
   "Bidding:","Playing:","Last trick:",
   "It's your turn !","      predefined game      ","Save",
   "This program is free software;",
   "you can redistribute it freely.",
-  "Use it at your own risk;",
+  "Use xskat at your own risk;",
   "there is NO WARRANTY.",
-  "Options"," Computer ","Strategy","pass","say 18",
+  "Options"," Computer ","Playing strength","--","-","0","+","++",
+  "Name",
   "Hints"," Variations ",
   "Play Ramsch","Always",
   " Ramsch variations ",
@@ -218,7 +245,7 @@ static char *eng_text[]={
   "FH passed:","MH passed:","RH passed:",
   "Say Kontra","with Kontra","if 18","Kontra"," Kontra ! ","Re","by ",
   "Replay"," Replay game ","with the cards from","me",
-  "Forehand changes:",
+  "Forehand changes:","Start","Back",
   " Speed ","Take trick after:","seconds","mouse click",
   "Shortcut","Ask","Never",
   "Bockrounds","+Ramsch","Resume Bockrounds",
@@ -249,9 +276,23 @@ static char *eng_text[]={
   "Language","Deutsch","English",
   "Old rules",
   "A mouse click or ESC / F1","will bring up this menu",
-  " Internet Relay Chat ",
+  " Multiplayer mode ",
+  " Local game via LAN ",
+  "Open own game table",
+  "Join other table",
+  "Invite Player2:",
+  "Invite Player3:",
+  "Computer name or IP address",
+  "Open game table",
+  "Game table:",
+  "Access to X server will be granted!",
+  "Remove after the game, if need be.",
+  "See: man xhost",
+  "Join game table",
+  "(Will close this window)",
+  " Internet game via IRC ",
   "Establish IRC connection with:",
-  "For IRC configuration see:",
+  "Extended IRC configuration see:",
   "man xskat",
   "Version mismatch",
   "(Problems? See README.IRC or 'man xskat' NOTES!)",
@@ -286,8 +327,6 @@ static char *eng_text[]={
   "/rules - show the current rules to everyone on your channel"
 };
 
-tx_typ textarr[TX_NUM_TX];
-
 static struct {
   char **arr;
   char *name[NUM_LANG];
@@ -306,6 +345,12 @@ VOID init_text()
       textarr[j].t[i]=textdesc[i].arr[j];
     }
   }
+}
+
+char *idxlang(i)
+int i;
+{
+  return textdesc[i].name[0];
 }
 
 int langidx(s)

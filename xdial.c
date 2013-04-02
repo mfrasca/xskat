@@ -1,7 +1,7 @@
 
 /*
     xskat - a card game for 1 to 3 players.
-    Copyright (C) 2000  Gunter Gerhardt
+    Copyright (C) 2004  Gunter Gerhardt
 
     This program is free software; you can redistribute it freely.
     Use it at your own risk; there is NO WARRANTY.
@@ -217,6 +217,7 @@ VOID init_dials()
   INIT_DI(diliste);
   INIT_DI(dioptions);
   INIT_DI(dicopyr);
+  INIT_DI(dicopyralt);
   INIT_DI(digrafik);
   INIT_DI(distrateg);
   INIT_DI(divarianten);
@@ -227,6 +228,7 @@ VOID init_dials()
   INIT_DI(diweiter);
   INIT_DI(dikontra);
   INIT_DI(dikonre);
+  INIT_DI(diinput);
   init_di(dihand);
   init_di(digrandhand);
   init_di(dischieben);
@@ -249,6 +251,11 @@ VOID init_dials()
   init_di(diresult);
   init_di(diwiederweiter);
   init_di(diwieder);
+  init_di(dimehrspieler);
+  init_di(dilanspiel);
+  init_di(dieigenertisch);
+  init_di(dianderertisch);
+  init_di(diwarteauf);
   init_di(diirc);
 }
 
@@ -276,6 +283,51 @@ int i;
 {
   return ob[i].spec&OB_DISABLED ||
     (ob[0].next&OB_DISABLED && !(ob[i].spec&OB_EXIT));
+}
+
+VOID cleanip(sn)
+int sn;
+{
+  int i;
+
+  if (!inputbuf[sn][0]) {
+    strcpy(inputbuf[sn],"127.0.0.1");
+  }
+  else {
+    i=0;
+    while (inputbuf[sn][i]) {
+      if (inputbuf[sn][i]==' ') inputbuf[sn][i]='.';
+      i++;
+    }
+  }
+}
+
+VOID cleanirchost(sn)
+int sn;
+{
+  int i;
+
+  if (!inputbuf[sn][0]) {
+    strncpy(inputbuf[sn],irc_host,35);
+    inputbuf[sn][35]=0;
+  }
+  i=0;
+  while (inputbuf[sn][i]) {
+    if (inputbuf[sn][i]==' ') inputbuf[sn][i]='.';
+    i++;
+  }
+}
+
+VOID cleanname(sn)
+int sn;
+{
+  int i;
+
+  i=0;
+  while (inputbuf[sn][i]) {
+    if (inputbuf[sn][i]==' ') inputbuf[sn][i]='_';
+    i++;
+  }
 }
 
 VOID hndl_btevent(sn,bt)
@@ -444,6 +496,51 @@ int sn,bt;
 	do_angesagt();
       }
     }
+    else if (ob==diinput[sn]) {
+      if (bt==3) {
+	inputbuf[sn][0]='_';
+	inputbuf[sn][1]=0;
+	diinput[sn][3].spec&=~OB_SELECTED;
+	if (actbtn[sn]!=4) {
+	  actbtn[sn]=4;
+	  draw_di(sn,4);
+	}
+	draw_di(sn,3);
+	draw_di(sn,2);
+      }
+      else {
+	inputbuf[sn][strlen(inputbuf[sn])-1]=0;
+	switch (inputdi[sn]) {
+	case 0:
+	  cleanip(sn);
+	  save_opt();
+	  di_eigenertisch(sn);
+	  break;
+	case 1:
+	  cleanip(sn);
+	  save_opt();
+	  di_anderertisch(sn);
+	  break;
+	case 2:
+	  cleanirchost(sn);
+	  save_opt();
+	  di_irc(sn);
+	  break;
+	case 3:
+	  cleanname(sn);
+	  set_conames();
+	  save_opt();
+	  di_strateg(sn);
+	  break;
+	case 4:
+	  cleanname(sn);
+	  set_conames();
+	  save_opt();
+	  di_grafik(sn);
+	  break;
+	}
+      }
+    }
     else if (ob==didicht) {
       remove_di(sn);
       if (didicht[3].spec&OB_SELECTED ||
@@ -471,7 +568,8 @@ int sn,bt;
     else if (ob==diwiederweiter) {
       remove_di(sn);
       clr_desk(0);
-      if (bt==1) di_wieder(sn);
+      skatopen=0;
+      if (bt==1) di_wieder(sn,0);
       else phase=GEBEN;
     }
     else if (ob==dischieben) {
@@ -554,14 +652,27 @@ int sn,bt;
       clr_desk(0);
       if (bt==20) di_ende(sn);
       else if (bt==22) di_proto(sn,1,0);
-      else if (bt==21) di_wieder(sn);
+      else if (bt==21) di_wieder(sn,1);
       else phase=GEBEN;
     }
     else if (ob==diwieder) {
       remove_di(sn);
       vorhandwn=diwieder[10].spec&OB_SELECTED?1:0;
-      wieder=bt-4;
-      phase=GEBEN;
+      if (bt==11) {
+	di_resultdi(sn);
+      }
+      else {
+	if (diwieder[5].spec&OB_SELECTED) {
+	  wieder=1;
+	}
+	else if (diwieder[6].spec&OB_SELECTED) {
+	  wieder=2;
+	}
+	else {
+	  wieder=3;
+	}
+	phase=GEBEN;
+      }
     }
     else if (ob==diproto[sn]) {
       remove_di(sn);
@@ -623,19 +734,23 @@ int sn,bt;
 	initscr(sn,1);
 	if (sav!=sort1[sn]+2*alternate[sn] && !irc_play) save_opt();
       }
-      if (bt==20) di_ende(sn);
-      else if (bt==18 && splres) di_proto(sn,1,0);
-      else if (bt==18) di_liste(sn,1);
-      else if (bt==19) di_grafik(sn);
+      if (bt==21) di_ende(sn);
+      else if (bt==19 && splres) di_proto(sn,1,0);
+      else if (bt==19) di_liste(sn,1);
+      else if (bt==20) di_grafik(sn);
       else if (bt==17) {
 	if (irc_play) irc_sendschenken(sn);
 	di_schenken(sn);
       }
+      else if (bt==18) di_mehrspieler(sn);
       else if (bt==2) di_copyr(sn);
     }
-    else if (ob==dicopyr[sn]) {
+    else if (ob==dicopyr[sn] || ob==dicopyralt[sn]) {
       remove_di(sn);
-      di_options(sn);
+      if (dlhintseen!=2 || firstgame) {
+	di_options(!sn && firstgame?-1:sn);
+      }
+      if (!sn) dlhintseen=1;
     }
     else if (ob==digrafik[sn]) {
       sav=blatt[sn]+4*lang[sn];
@@ -664,7 +779,6 @@ int sn,bt;
 	}
 	ag=1;
       }
-      if (sav!=blatt[sn]+4*lang[sn] && !irc_play) save_opt();
       if (ag) {
 	initscr(sn,2);
 	setcurs(sn+1);
@@ -672,18 +786,30 @@ int sn,bt;
 	  XUnmapWindow(dpy[sn],resdial[sn][0].win);
 	  XMapWindow(dpy[sn],resdial[sn][0].win);
 	}
+	set_conames();
+	if (sav!=blatt[sn]+4*lang[sn] && !irc_play) save_opt();
 	di_grafik(sn);
       }
-      if (bt==10) di_strateg(sn);
+      if (bt==11) {
+	di_input(sn,TX_NAME,4,usrname[0],9);
+      }
+      else if (bt==12) {
+	di_input(sn,TX_NAME,4,usrname[1],9);
+      }
+      else if (bt==13) {
+	set_conames();
+	if (sav!=blatt[sn]+4*lang[sn] && !irc_play) save_opt();
+	di_strateg(sn);
+      }
     }
     else if (ob==distrateg[sn]) {
       remove_di(sn);
       for (i=0;i<2;i++) stg[i]=strateg[i];
-      for (i=-4;i<=4;i++) {
-	if (distrateg[sn][i+10].spec&OB_SELECTED) {
+      for (i=-4;i<=0;i++) {
+	if (distrateg[sn][i+8].spec&OB_SELECTED) {
 	  stg[0]=i;
 	}
-	if (distrateg[sn][i+20].spec&OB_SELECTED) {
+	if (distrateg[sn][i+14].spec&OB_SELECTED) {
 	  stg[1]=i;
 	}
       }
@@ -694,7 +820,7 @@ int sn,bt;
 	  sav=1;
 	}
       }
-      if (distrateg[sn][26].spec&OB_SELECTED) {
+      if (distrateg[sn][16].spec&OB_SELECTED) {
 	if (hints[sn]) {
 	  hints[sn]=0;
 	  if (hintcard[0]!=-1) {
@@ -724,8 +850,14 @@ int sn,bt;
 	  sav=1;
 	}
       }
-      if (sav && !irc_play) save_opt();
-      di_varianten(sn);
+      if (bt>=19 && bt<=22) {
+	di_input(sn,TX_NAME,3,conames[1-(bt&1)][(bt-19)/2],9);
+      }
+      else {
+	set_conames();
+	if (sav && !irc_play) save_opt();
+	di_varianten(sn);
+      }
     }
     else if (ob==divarianten[sn]) {
       remove_di(sn);
@@ -828,7 +960,7 @@ int sn,bt;
       prverz(sn);
       if (bt==17) {
 	remove_di(sn);
-	if (!irc_play && numsp==1) di_irc(sn);
+	if (!irc_play && numsp==1) di_mehrspieler(sn);
 	else di_eingabe(sn);
       }
       else {
@@ -836,8 +968,66 @@ int sn,bt;
 	draw_di(sn,bt);
       }
     }
+    else if (ob==dimehrspieler) {
+      if (bt==2) di_lanspiel(sn);
+      else if (bt==3) di_irc(sn);
+      else if (bt==4) {
+	manpage("xskat");
+	dimehrspieler[bt].spec&=~OB_SELECTED;
+	draw_di(sn,bt);
+      }
+      else di_eingabe(sn);
+    }
+    else if (ob==dilanspiel) {
+      if (bt==2) di_eigenertisch(sn);
+      else if (bt==3) di_anderertisch(sn);
+      else di_mehrspieler(sn);
+    }
+    else if (ob==dieigenertisch) {
+      sav=laninvite[0]*2+laninvite[1];
+      laninvite[0]=!(dieigenertisch[4].spec&OB_SELECTED);
+      laninvite[1]=!(dieigenertisch[9].spec&OB_SELECTED);
+      if (sav!=laninvite[0]*2+laninvite[1]) save_opt();
+      if (bt==13) di_lanspiel(sn);
+      else if (!laninvite[0] && !laninvite[1]) {
+	di_eigenertisch(sn);
+      }
+      else if (bt==6) {
+	di_input(sn,TX_RECHNER_IP,0,lanip[1],35);
+      }
+      else if (bt==11) {
+	di_input(sn,TX_RECHNER_IP,0,lanip[2],35);
+      }
+      else di_warteauf(sn,0,0,0);
+    }
+    else if (ob==dianderertisch) {
+      if (bt==4) {
+	di_input(sn,TX_RECHNER_IP,1,lanip[0],35);
+      }
+      else if (bt==7) {
+	manpage("xhost");
+	dianderertisch[bt].spec&=~OB_SELECTED;
+	draw_di(sn,bt);
+      }
+      else if (bt==9) {
+	xstoreres();
+	exitus(0);
+      }
+      else di_lanspiel(sn);
+    }
+    else if (ob==diwarteauf) {
+      di_eigenertisch(sn);
+    }
     else if (ob==diirc) {
-      if (bt==6) di_eingabe(sn);
+      if (bt==7) di_mehrspieler(sn);
+      else if (bt==3) {
+	di_input(sn,TX_RECHNER_IP,2,irc_hostname,35);
+      }
+      else if (bt==6) {
+	manpage("xskat");
+	diirc[bt].spec&=~OB_SELECTED;
+	draw_di(sn,bt);
+      }
       else {
 	if (!fork()) startirc(1);
 	exitus(0);
@@ -881,6 +1071,7 @@ OBJECT *ob;
       ob!=diloesch &&
       ob!=dioptions[sn] &&
       ob!=dicopyr[sn] &&
+      ob!=dicopyralt[sn] &&
       ob!=digrafik[sn] &&
       ob!=distrateg[sn] &&
       ob!=divarianten[sn] &&
@@ -1164,6 +1355,55 @@ int sn;
   selpos[sn].num=0;
 }
 
+VOID manpage(subj)
+char *subj;
+{
+  if (!fork()) {
+    execlp("xterm","xterm","-e","man",subj,NULL);
+    fprintf(stderr,"xterm not found\n");
+    exitus(0);
+  }
+}
+
+VOID polldisps()
+{
+  static int tim;
+  Display *d;
+  char dn[2][80];
+  int i,ok,s[2];
+  char *argv[100];
+
+  if (++tim>20) tim=0;
+  if (tim) return;
+  ok=1;
+  for (i=0;i<2;i++) {
+    if ((s[i]=laninvite[i])) {
+      strcpy(dn[i],lanip[i+1]);
+      if (!strchr(dn[i],':')) {
+	strcat(dn[i],":0");
+      }
+      if ((d=XOpenDisplay(dn[i]))) {
+	if (!XGetDefault(d,prog_name,"ready")) ok=0;
+	else s[i]=0;
+	XCloseDisplay(d);
+      }
+      else ok=0;
+    }
+  }
+  if (ok) {
+    for (i=0;i<90 && i<theargc;i++) {
+      argv[i]=theargv[i];
+    }
+    if (laninvite[0]) argv[i++]=dn[0];
+    if (laninvite[1]) argv[i++]=dn[1];
+    argv[i]=0;
+    execvp(argv[0],argv);
+    fprintf(stderr,"%s not found\n",argv[0]);
+    exitus(0);
+  }
+  di_warteauf(0,1,s[0],s[1]);
+}
+
 VOID hndl_events()
 {
   int sn,b,x,y,i,opt,bt;
@@ -1192,6 +1432,10 @@ VOID hndl_events()
 			&keysym,(XComposeStatus *)0);
 	if (keysym==XK_Shift_L) sl=1;
 	else if (keysym==XK_Shift_R) sr=1;
+	if (keysym==XK_F6 && pkoption!=1) {
+	  if (!pkoption) pkoption=2;
+	  else if (pkoption!=4) pkoption++;
+	}
 	if (!ob &&
 	    (keysym==XK_Escape ||
 	     keysym==XK_F1)) {
@@ -1200,7 +1444,29 @@ VOID hndl_events()
 	}
 	else if (i && irc_state==IRC_PLAYING && irc_xinput(buf,i));
 	else if (ob || selpos[sn].num) {
-	  if ((keysym==XK_Tab && !sr && !sl) ||
+	  if (ob==diinput[sn] &&
+	      ((i==1 && (unsigned int)buf[0]>=' ') ||
+	       keysym==XK_BackSpace || keysym==XK_Delete)) {
+	    buf[1]=0;
+	    if (keysym==XK_BackSpace || keysym==XK_Delete) {
+	      if (strlen(inputbuf[sn])>1) {
+		inputbuf[sn][strlen(inputbuf[sn])-2]='_';
+		inputbuf[sn][strlen(inputbuf[sn])-1]=0;
+	      }
+	    }
+	    else if (strlen(inputbuf[sn])-1<inputlen[sn]) {
+	      inputbuf[sn][strlen(inputbuf[sn])-1]=0;
+	      strcat(inputbuf[sn],buf);
+	      strcat(inputbuf[sn],"_");
+	    }
+	    if (actbtn[sn]!=4) {
+	      actbtn[sn]=4;
+	      draw_di(sn,3);
+	      draw_di(sn,4);
+	    }
+	    draw_di(sn,2);
+	  }
+	  else if ((keysym==XK_Tab && !sr && !sl) ||
 	      (keysym==XK_KP_Tab && !sr && !sl) ||
 	      keysym==XK_Right ||
 	      keysym==XK_Down ||
@@ -1288,6 +1554,9 @@ VOID hndl_events()
       hndl_button(b-1,x,y,opt,1);
     }
     computer();
+  }
+  if (actdial[0]==diwarteauf) {
+    polldisps();
   }
   if (irc_play) {
     while ((l=irc_getline())) {
@@ -1594,7 +1863,7 @@ int sn,th;
       }
       if (numsp==1) {
 	if (phase>=SPIELEN && phase<=NIMMSTICH && s==spieler && trumpf!=5) {
-	  strcpy(txt,textarr[TX_COMPUTER].t[lang[sn]]);
+	  prspnam(txt,s,lang[sn]);
 	}
 	else {
 	  *txt=0;
@@ -1653,6 +1922,15 @@ int sn,th;
 
 VOID di_hand()
 {
+  int ln;
+  static char txt[NUM_LANG][33];
+  static tx_typ tt;
+
+  dihand[4].str=&tt;
+  for (ln=0;ln<NUM_LANG;ln++) {
+    tt.t[ln]=txt[ln];
+    sprintf(txt[ln],textarr[TX_GEREIZT_BIS_N].t[ln],reizw[reizp]);
+  }
   create_di(spieler,dihand);
 }
 
@@ -2634,22 +2912,29 @@ int sn;
 VOID di_result(be)
 int be;
 {
-  int ln,sn,i,x,y;
+  int ln,sn,i,x,y,sx,sy;
   static int ini,smlh;
   static char sa[NUM_LANG][30],sw[NUM_LANG][40],sg[NUM_LANG][40];
   static char su[3][3][10],txt[NUM_LANG][30],spt[3][40];
   static tx_typ tsa,tsw,tsg,tsu[3][3],ttxt,tsp[3];
 
+  sx=sy=0;
   for (sn=0;sn<numsp;sn++) {
     if (handsp || sn!=spieler || trumpf==5) {
       i=trumpf==5 && sn==ausspl;
       x=desk[sn].playx+8*desk[sn].cardx;
+      sx=x-charw[sn];
       if (sn==spieler || numsp>1 || trumpf==5) {
 	y=desk[sn].playy;
+	sy=y+desk[sn].cardh-charh[sn];
       }
       else {
 	y=desk[sn].y+3;
-	if (spieler==left(sn)) x=desk[sn].playx;
+	sy=y;
+	if (spieler==left(sn)) {
+	  x=desk[sn].playx;
+	  sx=x+2*desk[sn].cardw+charw[sn];
+	}
       }
       putcard(sn,prot2.skat[i][0],x,y);
       putcard(sn,prot2.skat[i][1],x+desk[sn].cardx,y);
@@ -2768,6 +3053,22 @@ int be;
       phase=GEBEN;
     }
     else {
+      if (sx && sy) {
+	if ((trumpf==5 && sn==ausspl) || handsp) {
+	  if (sx>desk[sn].w/2) {
+	    sx-=(strlen(textarr[TX_IM_SKAT_IST].t[lang[sn]])+0)*
+	      charw[sn];
+	  }
+	  v_gtextnc(sn,0,0,sx,sy,0,textarr[TX_IM_SKAT_IST].t[lang[sn]]);
+	}
+	else {
+	  if (sx>desk[sn].w/2) {
+	    sx-=(strlen(textarr[TX_URSPRUENG_SKAT].t[lang[sn]])+0)*
+	      charw[sn];
+	  }
+	  v_gtextnc(sn,0,0,sx,sy,0,textarr[TX_URSPRUENG_SKAT].t[lang[sn]]);
+	}
+      }
       set_names(diresult,6);
       di_resultdi(sn);
     }
@@ -2795,9 +3096,10 @@ int sn;
     sn=0;
   }
   else {
-    dioptions[sn][22].spec=OB_HIDDEN;
     dioptions[sn][23].spec=OB_HIDDEN;
+    dioptions[sn][24].spec=OB_HIDDEN;
   }
+  if (!sn) firstgame=0;
   for (i=0;i<3;i++) {
     if (dioptions[sn][14+i].str!=OB_NONE) {
       dioptions[sn][14+i].str=&stichstr[blatt[sn]>=2][sn][i];
@@ -2811,24 +3113,30 @@ int sn;
     tt[sn].t[ln]=txt[sn][ln];
     sprintf(txt[sn][ln],"%s %d",textarr[TX_BOCK_SPIELE].t[ln],bockspiele);
   }
-  dioptions[sn][18].spec=splstp||splres||
+  dioptions[sn][19].spec=splstp||splres||
     (irc_play && (sum[0][0] || sum[0][1] || sum[0][2] ||
 		  sum[1][0] || sum[1][1] || sum[1][2] ||
 		  sum[2][0] || sum[2][1] || sum[2][2]))
       ?OB_EXIT:OB_HIDDEN;
-  dioptions[sn][18].str=&textarr[splres?TX_PROTOKOLL:TX_SPIELLISTE];
+  dioptions[sn][19].str=&textarr[splres?TX_PROTOKOLL:TX_SPIELLISTE];
   dioptions[sn][17].spec=
     schenken && !schenkstufe && trumpf<=4 && stich==1 &&
       phase==SPIELEN && sn!=spieler && (ausspl+vmh)%3==sn
 	?OB_EXIT:OB_HIDDEN;
+  dioptions[sn][18].spec=OB_HIDDEN;
+  if (f) {
+    dioptions[sn][23].spec=OB_CENTERED|OB_BOLD;
+    dioptions[sn][24].spec=OB_CENTERED|OB_BOLD;
+  }
+  else if (numsp==1 && phase!=SPIELEN && !irc_play) {
+    dioptions[sn][18].spec=OB_EXIT;
+  }
   dioptions[sn][14].spec=
     dioptions[sn][15].spec=
       dioptions[sn][16].spec=
-	dioptions[sn][17].spec==OB_EXIT?OB_HIDDEN:OB_NONE;
-  if (f) {
-    dioptions[sn][22].spec=OB_CENTERED|OB_BOLD;
-    dioptions[sn][23].spec=OB_CENTERED|OB_BOLD;
-  }
+	(dioptions[sn][17].spec==OB_EXIT ||
+	 dioptions[sn][18].spec==OB_EXIT)
+	  ?OB_HIDDEN:OB_NONE;
   create_di(sn,dioptions[sn]);
   dioptions[sn][5-sort1[sn]].spec|=OB_SELECTED;
   dioptions[sn][7-alternate[sn]].spec|=OB_SELECTED;
@@ -2838,12 +3146,43 @@ int sn;
 VOID di_copyr(sn)
 int sn;
 {
-  create_di(sn,dicopyr[sn]);
+  if (!sn && !dlhintseen) dlhintseen=2;
+  if (ggcards) {
+    create_di(sn,dicopyr[sn]);
+  }
+  else {
+    create_di(sn,dicopyralt[sn]);
+  }
 }
 
 VOID di_grafik(sn)
 int sn;
 {
+  static tx_typ tt[2];
+  int ln;
+  char buf[40];
+
+  sprintf(buf,"%s %s",usrname[0],usrname[1]);
+  extractnamln(3,buf,0);
+  if (!spnames[0][0][0][0]) {
+    strcpy(usrname[0],"?");
+    strcpy(usrname[1],"");
+  }
+  else {
+    strcpy(usrname[0],spnames[0][0][0]);
+    strcpy(usrname[1],spnames[0][1][0]);
+  }
+  for (ln=0;ln<NUM_LANG;ln++) {
+    tt[0].t[ln]=usrname[0];
+    tt[1].t[ln]=usrname[1];
+  }
+  digrafik[sn][11].str=&tt[0];
+  digrafik[sn][12].str=&tt[1];
+  if (irc_play || numsp>1) {
+    digrafik[sn][10].spec=
+      digrafik[sn][11].spec=
+	digrafik[sn][12].spec=OB_HIDDEN;
+  }
   create_diopt(sn,digrafik[sn]);
   digrafik[sn][3+blatt[sn]].spec|=OB_SELECTED;
   digrafik[sn][8+lang[sn]].spec|=OB_SELECTED;
@@ -2852,46 +3191,57 @@ int sn;
 VOID di_strateg(sn)
 int sn;
 {
-  static char nums[9][3],ini[3];
-  static tx_typ tt[9];
+  static tx_typ tt[3][4];
   int i,dis,ln;
+  char buf[40];
 
-  if (!ini[sn]) {
-    for (i=-4;i<=4;i++) {
-      sprintf(nums[i+4],"%d",i);
-      distrateg[sn][i+10].str=distrateg[sn][i+20].str=&tt[i+4];
-      for (ln=0;ln<NUM_LANG;ln++) {
-	tt[i+4].t[ln]=nums[i+4];
-      }
-    }
-    dis=irc_play?OB_DISABLED|OB_BUTTON:OB_BUTTON;
-    for (i=0;i<9;i++) {
-      distrateg[sn][i+6].spec=distrateg[sn][i+16].spec=dis;
-    }
-    if (numsp>1) {
-      if (!sn) distrateg[sn][5].str=&textarr[TX_RECHTS];
-      for (i=0;i<10;i++) {
-	distrateg[sn][i+15].spec=OB_HIDDEN;
-      }
-      for (i=25;i<29;i++) {
-	distrateg[sn][i].y-=numsp>2?4:1;
-      }
-      distrateg[sn][0].h-=numsp>2?4:1;
-      if (numsp>2) {
-	for (i=2;i<15;i++) {
-	  distrateg[sn][i].spec=OB_HIDDEN;
-	}
-	distrateg[sn][0].w-=10;
-	distrateg[sn][1].w-=10;
-	distrateg[sn][28].x-=5;
-      }
-    }
-    ini[sn]=1;
+  dis=irc_play || numsp>2?OB_DISABLED:OB_NONE;
+  for (i=0;i<5;i++) {
+    distrateg[sn][i+4].spec|=dis;
+  }
+  dis=irc_play || numsp>1?OB_HIDDEN:OB_NONE;
+  for (i=0;i<5;i++) {
+    distrateg[sn][i+10].spec|=dis;
+  }
+  dis=irc_play || numsp>1?OB_HIDDEN:OB_NONE;
+  distrateg[sn][3].spec=distrateg[sn][9].spec=dis;
+  ln=lang[sn];
+  sprintf(buf,"%s %s",conames[0][0],conames[0][1]);
+  extractnamln(3,buf,ln);
+  if (!spnames[3][0][ln][0]) {
+    strcpy(conames[0][0],textarr[TX_COMPUTER].t[ln]);
+    strcpy(conames[0][1],textarr[TX_LINKS].t[ln]);
+  }
+  else {
+    strcpy(conames[0][0],spnames[3][0][ln]);
+    strcpy(conames[0][1],spnames[3][1][ln]);
+  }
+  sprintf(buf,"%s %s",conames[1][0],conames[1][1]);
+  extractnamln(3,buf,ln);
+  if (!spnames[3][0][ln][0]) {
+    strcpy(conames[1][0],textarr[TX_COMPUTER].t[ln]);
+    strcpy(conames[1][1],textarr[TX_RECHTS].t[ln]);
+  }
+  else {
+    strcpy(conames[1][0],spnames[3][0][ln]);
+    strcpy(conames[1][1],spnames[3][1][ln]);
+  }
+  tt[sn][0].t[ln]=conames[0][0];
+  tt[sn][1].t[ln]=conames[1][0];
+  tt[sn][2].t[ln]=conames[0][1];
+  tt[sn][3].t[ln]=conames[1][1];
+  distrateg[sn][19].str=&tt[sn][0];
+  distrateg[sn][20].str=&tt[sn][1];
+  distrateg[sn][21].str=&tt[sn][2];
+  distrateg[sn][22].str=&tt[sn][3];
+  dis=irc_play || numsp>1?OB_HIDDEN:OB_NONE;
+  for (i=0;i<5;i++) {
+    distrateg[sn][18+i].spec|=dis;
   }
   create_diopt(sn,distrateg[sn]);
-  distrateg[sn][strateg[0]+10].spec|=OB_SELECTED;
-  distrateg[sn][strateg[1]+20].spec|=OB_SELECTED;
-  distrateg[sn][hints[sn]+26].spec|=OB_SELECTED;
+  distrateg[sn][strateg[0]+8].spec|=OB_SELECTED;
+  distrateg[sn][strateg[1]+14].spec|=OB_SELECTED;
+  distrateg[sn][hints[sn]+16].spec|=OB_SELECTED;
 }
 
 VOID di_varianten(sn)
@@ -2962,24 +3312,90 @@ int sn;
   digeschwindigkeit[sn][14+abkuerz[sn]].spec|=OB_SELECTED;
 }
 
+VOID di_mehrspieler(sn)
+int sn;
+{
+  create_diopt(sn,dimehrspieler);
+}
+
+VOID di_lanspiel(sn)
+int sn;
+{
+  create_di(sn,dilanspiel);
+}
+
+VOID di_eigenertisch(sn)
+int sn;
+{
+  static tx_typ tt1,tt2;
+  int ln;
+
+  for (ln=0;ln<NUM_LANG;ln++) {
+    tt1.t[ln]=lanip[1];
+    tt2.t[ln]=lanip[2];
+  }
+  dieigenertisch[6].str=&tt1;
+  dieigenertisch[11].str=&tt2;
+  create_di(sn,dieigenertisch);
+  if (!laninvite[0] && !laninvite[1]) laninvite[0]=1;
+  dieigenertisch[4-laninvite[0]].spec|=OB_SELECTED;
+  dieigenertisch[9-laninvite[1]].spec|=OB_SELECTED;
+}
+
+VOID di_anderertisch(sn)
+int sn;
+{
+  static tx_typ tt0;
+  int ln;
+
+  for (ln=0;ln<NUM_LANG;ln++) {
+    tt0.t[ln]=lanip[0];
+  }
+  dianderertisch[4].str=&tt0;
+  create_di(sn,dianderertisch);
+}
+
+VOID di_warteauf(sn,u,s2,s3)
+int sn,u,s2,s3;
+{
+  static tx_typ tt2,tt3;
+  static char txt2[80],txt3[80];
+  static int st2,st3;
+  int ln;
+
+  if (u) {
+    if (st2==s2 && st3==s3) return;
+    st2=s2;
+    st3=s3;
+  }
+  else {
+    st2=laninvite[0];
+    st3=laninvite[1];
+  }
+  sprintf(txt2,textarr[TX_WARTEN_AUF_SPIELER_N].t[lang[sn]],2);
+  sprintf(txt3,textarr[TX_WARTEN_AUF_SPIELER_N].t[lang[sn]],3);
+  for (ln=0;ln<NUM_LANG;ln++) {
+    tt2.t[ln]=txt2;
+    tt3.t[ln]=txt3;
+  }
+  diwarteauf[2].str=&tt2;
+  diwarteauf[3].str=&tt3;
+  diwarteauf[2].spec=st2?OB_CENTERED:OB_HIDDEN;
+  diwarteauf[3].spec=st3?OB_CENTERED:OB_HIDDEN;
+  create_di(sn,diwarteauf);
+}
+
 VOID di_irc(sn)
 int sn;
 {
-  static char txt[34];
   static tx_typ tt;
   int ln;
 
-  create_diopt(sn,diirc);
   for (ln=0;ln<NUM_LANG;ln++) {
-    tt.t[ln]=txt;
+    tt.t[ln]=irc_hostname;
   }
-  if (!irc_host &&
-      !(irc_host=XGetDefault(dpy[sn],prog_name,"ircserver")) &&
-      !(irc_host=getenv("IRCSERVER"))) {
-    irc_host=irc_defaulthost;
-  }
-  sprintf(txt,"%.32s",irc_host);
   diirc[3].str=&tt;
+  create_di(sn,diirc);
 }
 
 VOID di_eingabe(sn)
@@ -2989,11 +3405,6 @@ int sn;
   static tx_typ tt[5];
   int i,ln;
 
-  create_diopt(sn,digui[sn]);
-  digui[sn][3+mbutton[sn]].spec|=OB_SELECTED;
-  digui[sn][10+keyboard[sn]].spec|=OB_SELECTED;
-  digui[sn][14+briefmsg[sn]].spec|=OB_SELECTED;
-  digui[sn][17+trickl2r[sn]].spec|=OB_SELECTED;
   for (i=0;i<5;i++) {
     for (ln=0;ln<NUM_LANG;ln++) {
       tt[i].t[ln]=txt[i];
@@ -3001,12 +3412,50 @@ int sn;
     sprintf(txt[i],"%d",i+1);
     digui[sn][4+i].str=&tt[i];
   }
+  create_diopt(sn,digui[sn]);
+  digui[sn][3+mbutton[sn]].spec|=OB_SELECTED;
+  digui[sn][10+keyboard[sn]].spec|=OB_SELECTED;
+  digui[sn][14+briefmsg[sn]].spec|=OB_SELECTED;
+  digui[sn][17+trickl2r[sn]].spec|=OB_SELECTED;
 }
 
-VOID di_wieder(sn)
-int sn;
+VOID di_wieder(sn,f)
+int sn,f;
 {
+  if (f) {
+    diwieder[11].spec&=~OB_HIDDEN;
+  }
+  else {
+    diwieder[11].spec|=OB_HIDDEN;
+  }
   create_di(sn,diwieder);
+  diwieder[6].spec|=OB_SELECTED;
   diwieder[9+vorhandwn].spec|=OB_SELECTED;
-  actbtn[sn]--;
+}
+
+VOID di_input(sn,ti,di,buf,len)
+int sn,ti,di;
+char *buf;
+int len;
+{
+  static tx_typ tt[3],tx[3];
+  static char txt[3][80];
+  int ln;
+
+  if (len>35) {
+    buf[35]=0;
+    len=35;
+  }
+  strcat(buf,"_");
+  inputdi[sn]=di;
+  inputbuf[sn]=buf;
+  inputlen[sn]=len;
+  sprintf(txt[sn]," %s ",textarr[ti].t[lang[sn]]);
+  for (ln=0;ln<NUM_LANG;ln++) {
+    tt[sn].t[ln]=buf;
+    tx[sn].t[ln]=txt[sn];
+  }
+  diinput[sn][1].str=&tx[sn];
+  diinput[sn][2].str=&tt[sn];
+  create_di(sn,diinput[sn]);
 }

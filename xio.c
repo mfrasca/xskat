@@ -1,7 +1,7 @@
 
 /*
     xskat - a card game for 1 to 3 players.
-    Copyright (C) 2000  Gunter Gerhardt
+    Copyright (C) 2004  Gunter Gerhardt
 
     This program is free software; you can redistribute it freely.
     Use it at your own risk; there is NO WARRANTY.
@@ -37,6 +37,7 @@
 #include <X11/X.h>
 #include <X11/Xutil.h>
 #include <X11/cursorfont.h>
+#include <X11/Xatom.h>
 #include "defs.h"
 #include "skat.h"
 #include "bitmaps.h"
@@ -360,29 +361,36 @@ int sn;
   desk[sn].pboxy=desk[sn].skaty+desk[sn].cardh+13*desk[sn].f/desk[sn].q;
 }
 
+
 VOID extractnam(sn,str)
 int sn;
 char *str;
 {
-  char *eos;
-  int ln,z,s;
+  int ln;
 
   for (ln=0;ln<NUM_LANG;ln++) {
-    spnames[sn][0][ln][0]=0;
-    spnames[sn][1][ln][0]=0;
+    extractnamln(sn,str,ln);
   }
+}
+
+VOID extractnamln(sn,str,ln)
+int sn;
+char *str;
+int ln;
+{
+  char *eos;
+  int z,s;
+
+  spnames[sn][0][ln][0]=0;
+  spnames[sn][1][ln][0]=0;
   if (!str) str="";
   if (!(eos=strchr(str,'@')) && !(eos=strchr(str,':'))) eos=str+strlen(str);
   for (z=0;z<2 && str!=eos;z++) {
-    while (*str==' ' || *str=='-') str++;
-    for (s=0;s<9 && str!=eos && *str!=' ' && *str!='-';s++,str++) {
-      for (ln=0;ln<NUM_LANG;ln++) {
-	spnames[sn][z][ln][s]=*str=='~'?'-':*str;
-      }
+    while (*str==' ' || *str=='~') str++;
+    for (s=0;s<9 && str!=eos && *str!=' ' && *str!='~';s++,str++) {
+      spnames[sn][z][ln][s]=*str;
     }
-    for (ln=0;ln<NUM_LANG;ln++) {
-      spnames[sn][z][ln][s]=0;
-    }
+    spnames[sn][z][ln][s]=0;
   }
 }
 
@@ -410,7 +418,7 @@ xskat [-display|-d display] [-geometry|-g geometry] [-font|-fn font]\n\
   [-ircport number] [-ircchannel name] [-ircnick name] [-ircuser name]\n\
   [-ircrealname name] [-ircpos number]\n\
   [-irclog file] [-irclogappend] [-irclogoverwrite]\n\
-  [-auto #ofgames] [-opt filename] [player@display...]\n\
+  [-auto #ofgames] [-opt filename] [-pk] [player@display...]\n\
 After starting the game a mouse click or ESC/F1 will bring up a menu.\n\
 ");
 }
@@ -632,25 +640,27 @@ VOID drawimg(sn,c,f,w,x,y)
 int sn,c,f,w,x,y;
 {
   long i,j,k;
-  int l,p,r,g,b,m,s,gr,tc,idx,ld,pd;
+  int l,p,r,g,b,m,s,gr,tc,idx,ld,pd,an;
   static unsigned char thepic[138][88];
   static int fsdbuf[2][138][3];
+  static int smlbuf[138][3];
+  static int smcbuf[138][3];
   static XPoint xp[256][32];
   unsigned long pm[256];
-  int pc[6][6][6];
+  static int pc[16][16][16];
   unsigned char (*themap)[256][3];
   int xn[256];
   XColor xc,*xcp;
   int cmapsize;
 
-  decompgif(f<0?back_gif:blatt[sn]>=2?de_gif[f][w]:fr_gif[f][w],
+  decompgif(f<0?backsd_gif[0]:blatt[sn]>=2?de_gif[f][w]:fr_gif[f][w],
 	    (unsigned char *)thepic,(unsigned char **)&themap,&cmapsize);
-  tc=desk[sn].plan>=12 && desk[sn].col>2;
+  tc=desk[sn].plan>=12 && desk[sn].col>2 && desk[sn].large;
   xcp=&color[sn][0];
   if (!tc) {
-    for (i=0;i<=0xffff;i+=0x3333) {
-      for (j=0;j<=0xffff;j+=0x3333) {
-	for (k=0;k<=0xffff;k+=0x3333) {
+    for (i=0;i<=0xffff;i+=0x1111) {
+      for (j=0;j<=0xffff;j+=0x1111) {
+	for (k=0;k<=0xffff;k+=0x1111) {
 	  l=0;
 	  ld=abs(xcp[l].red-i)+abs(xcp[l].green-j)+abs(xcp[l].blue-k);
 	  for (p=1;p<desk[sn].col;p++) {
@@ -660,7 +670,7 @@ int sn,c,f,w,x,y;
 	      ld=pd;
 	    }
 	  }
-	  pc[i/0x3333][j/0x3333][k/0x3333]=l;
+	  pc[i/0x1111][j/0x1111][k/0x1111]=l;
 	}
       }
     }
@@ -675,6 +685,7 @@ int sn,c,f,w,x,y;
       xc.green=(*themap)[i][1];
       xc.blue=(*themap)[i][2];
       if (blatt[sn]==3 && f==3 && xc.red>220 && xc.green<100 && xc.blue<100) {
+	if (xc.blue<50) xc.blue=50;
 	xc.green+=xc.blue+50;
 	xc.blue=0;
       }
@@ -694,18 +705,32 @@ int sn,c,f,w,x,y;
     m=0;
   }
   else {
-    gr=de_flg[f][w]>>1;
-    m=de_flg[f][w]&1;
+    if (ggcards) {
+      gr=ggde_flg[f][w]>>1;
+      m=ggde_flg[f][w]&1;
+    }
+    else {
+      gr=de_flg[f][w]>>1;
+      m=de_flg[f][w]&1;
+    }
   }
   idx=0;
   for (j=0;j<138;j++) {
     fsdbuf[idx][j][0]=fsdbuf[idx][j][1]=fsdbuf[idx][j][2]=0;
+    smlbuf[j][0]=-1;
+    smcbuf[j][0]=-1;
   }
   idx=1-idx;
   for (i=(desk[sn].large?87:86+(f<0));i>=0;i--) {
     s=f<0 && i>43?1:2;
     k=!i && m?desk[sn].large?88:58:0;
     if (!desk[sn].large && !((i+s)%3)) {
+      for (j=(gr?137:68);j>=0;j--) {
+	p=thepic[j][i];
+	smlbuf[j][0]=(*themap)[p][0];
+	smlbuf[j][1]=(*themap)[p][1];
+	smlbuf[j][2]=(*themap)[p][2];
+      }
       continue;
     }
     for (j=0;j<138;j++) {
@@ -714,11 +739,43 @@ int sn,c,f,w,x,y;
     idx=1-idx;
     for (j=(gr?137:68);j>=0;j--) {
       p=thepic[j][i];
+      if (!desk[sn].large && !((j+2)%3)) {
+	if (j) {
+	  smcbuf[j-1][0]=(*themap)[p][0];
+	  smcbuf[j-1][1]=(*themap)[p][1];
+	  smcbuf[j-1][2]=(*themap)[p][2];
+	  fsdbuf[idx][j-1][0]+=fsdbuf[idx][j][0];
+	  fsdbuf[idx][j-1][1]+=fsdbuf[idx][j][1];
+	  fsdbuf[idx][j-1][2]+=fsdbuf[idx][j][2];
+	}
+	continue;
+      }
       if (!tc) {
 	r=(*themap)[p][0];
 	g=(*themap)[p][1];
 	b=(*themap)[p][2];
+	an=1;
+	if (smlbuf[j][0]>=0) {
+	  r+=smlbuf[j][0];
+	  g+=smlbuf[j][1];
+	  b+=smlbuf[j][2];
+	  smlbuf[j][0]=-1;
+	  an++;
+	}
+	if (smcbuf[j][0]>=0) {
+	  r+=smcbuf[j][0];
+	  g+=smcbuf[j][1];
+	  b+=smcbuf[j][2];
+	  smcbuf[j][0]=-1;
+	  an++;
+	}
+	if (an>1) {
+	  r/=an;
+	  g/=an;
+	  b/=an;
+	}
 	if (blatt[sn]==3 && f==3 && r>220 && g<100 && b<100) {
+	  if (b<50) b=50;
 	  g+=b+50;
 	  b=0;
 	}
@@ -746,11 +803,14 @@ int sn,c,f,w,x,y;
 	    if (g<127) g=g*11/16;
 	    if (b<127) b=b*11/16;
 	  }
-	  p=pc[r/0x33][g/0x33][b/0x33];
+	  p=pc[r/0x11][g/0x11][b/0x11];
 	  r-=xcp[p].red>>8;
 	  g-=xcp[p].green>>8;
 	  b-=xcp[p].blue>>8;
 	}
+      }
+      else {
+	r=g=b=0;
       }
       if (desk[sn].large) {
 	xp[p][xn[p]].x=x+i+1;
@@ -763,14 +823,6 @@ int sn,c,f,w,x,y;
 	}
       }
       else {
-	if (!((j+2)%3)) {
-	  if (j) {
-	    fsdbuf[idx][j-1][0]+=fsdbuf[idx][j][0];
-	    fsdbuf[idx][j-1][1]+=fsdbuf[idx][j][1];
-	    fsdbuf[idx][j-1][2]+=fsdbuf[idx][j][2];
-	  }
-	  continue;
-	}
 	xp[p][xn[p]].x=x+(i+s)*2/3-m+k;
 	xp[p][xn[p]].y=y+(j+2)*2/3;
 	xn[p]++;
@@ -1137,8 +1189,7 @@ int sn;
   unsigned long p;
   XColor xc;
 
-  if (desk[sn].col<=2 ||
-      desk[sn].plan>=12) {
+  if (desk[sn].col<=2) {
     return;
   }
   else if (desk[sn].plan>=8) {
@@ -1169,7 +1220,7 @@ int sn;
 	find_cardcol(de_gif[i][j],ramp[c],col);
       }
     }
-    find_cardcol(back_gif,ramp[c],col);
+    find_cardcol(backsd_gif[0],ramp[c],col);
     ncol=0;
     for (i=0;i<6-c;i++) {
       for (j=0;j<6-c;j++) {
@@ -1228,6 +1279,8 @@ int sn;
   }
   else {
     extractnam(sn,getenv("LOGNAME"));
+    strcpy(usrname[0],spnames[0][0][0]);
+    strcpy(usrname[1],spnames[0][1][0]);
     memcpy((VOID *)color[1],(VOID *)color[0],sizeof(color[0]));
     memcpy((VOID *)color[2],(VOID *)color[0],sizeof(color[0]));
   }
@@ -1360,7 +1413,8 @@ int sn;
   sort1[sn]=!downup;
   if (!altseqset[sn]) {
     res=XGetDefault(dpy[sn],prog_name,"alt");
-    altseq=!res || istrue(res);
+    if (!res && sn) altseq=alternate[0];
+    else altseq=res && istrue(res);
   }
   alternate[sn]=!!altseq;
   if (!alistset[sn]) {
@@ -1370,31 +1424,46 @@ int sn;
     }
     else {
       res=XGetDefault(dpy[sn],prog_name,"tlist");
-      alist[sn]=res && istrue(res)?2:0;
+      if (!res && sn) alist[sn]=alist[0];
+      else alist[sn]=res && istrue(res)?2:0;
     }
   }
   if ((res=XGetDefault(dpy[sn],prog_name,"alias"))) {
     extractnam(sn,res);
+    if (!sn) {
+      strcpy(usrname[0],spnames[0][0][0]);
+      strcpy(usrname[1],spnames[0][1][0]);
+    }
   }
-  if (!hintsset[sn] &&
-      (res=XGetDefault(dpy[sn],prog_name,"hint"))) {
-    hints[sn]=istrue(res);
+  if (!hintsset[sn]) {
+    res=XGetDefault(dpy[sn],prog_name,"hint");
+    if (!res && sn) hints[sn]=hints[0];
+    else hints[sn]=res && istrue(res);
   }
-  if (!blattset[sn] &&
-      (res=XGetDefault(dpy[sn],prog_name,"cards"))) {
-    blatt[sn]=atoi(res);
-    if (blatt[sn]<0 || blatt[sn]>3) blatt[sn]=0;
+  if (!blattset[sn]) {
+    res=XGetDefault(dpy[sn],prog_name,"cards");
+    if (res) {
+      blatt[sn]=atoi(res);
+      if (blatt[sn]<0 || blatt[sn]>3) blatt[sn]=1;
+    }
+    else if (sn) {
+      blatt[sn]=blatt[0];
+    }
   }
   if (!langset[sn]) {
-    lang[sn]=langidx(XGetDefault(dpy[sn],prog_name,"language"));
+    res=XGetDefault(dpy[sn],prog_name,"language");
+    if (!res && sn) lang[sn]=lang[0];
+    else lang[sn]=langidx(res);
   }
-  if (!briefmsgset[sn] &&
-      (res=XGetDefault(dpy[sn],prog_name,"briefmsg"))) {
-    briefmsg[sn]=istrue(res);
+  if (!briefmsgset[sn]) {
+    res=XGetDefault(dpy[sn],prog_name,"briefmsg");
+    if (!res && sn) briefmsg[sn]=briefmsg[0];
+    else briefmsg[sn]=res && istrue(res);
   }
-  if (!trickl2rset[sn] &&
-      (res=XGetDefault(dpy[sn],prog_name,"trickl2r"))) {
-    trickl2r[sn]=istrue(res);
+  if (!trickl2rset[sn]) {
+    res=XGetDefault(dpy[sn],prog_name,"trickl2r");
+    if (!res && sn) trickl2r[sn]=trickl2r[0];
+    else trickl2r[sn]=res && istrue(res);
   }
   if (!sn) {
     if (!game_file) {
@@ -1478,6 +1547,16 @@ int sn;
 	       irc_play?"irclist":"list",
 	       irc_play?"xskat.irc":"xskat.lst");
     }
+    if (!cards_file) {
+      getdeffn(prog_name,&cards_file,"cardsfile","xskat.cards");
+    }
+    if (!irc_host &&
+	!(irc_host=XGetDefault(dpy[sn],prog_name,"ircserver")) &&
+	!(irc_host=getenv("IRCSERVER"))) {
+      irc_host=irc_defaulthost;
+    }
+    strncpy(irc_hostname,irc_host,35);
+    irc_hostname[35]=0;
     if (irc_play) {
       game_file=0;
       if (irc_pos<0 &&
@@ -1489,11 +1568,6 @@ int sn;
       if (!irc_telnet &&
 	  !(irc_telnet=XGetDefault(dpy[sn],prog_name,"irctelnet"))) {
 	irc_telnet="telnet";
-      }
-      if (!irc_host &&
-	  !(irc_host=XGetDefault(dpy[sn],prog_name,"ircserver")) &&
-	  !(irc_host=getenv("IRCSERVER"))) {
-	irc_host=irc_defaulthost;
       }
       if (irc_port<0 &&
 	  ((res=XGetDefault(dpy[sn],prog_name,"ircport")) ||
@@ -1548,13 +1622,14 @@ int sn;
 	}
       }
       if (strateg[i]<-4) strateg[i]=-4;
-      else if (strateg[i]>4) strateg[i]=4;
+      else if (strateg[i]>0) strateg[i]=0;
     }
     if (prot_file && !*prot_file) prot_file=0;
     if (opt_file && !*opt_file) opt_file=0;
     if (game_file && !*game_file) game_file=0;
     if (list_file && !*list_file) list_file=0;
     if (irc_logfile && !*irc_logfile) irc_logfile=0;
+    if (cards_file && !*cards_file) cards_file=0;
   }
   if ((geom_f[sn]&(XValue|YValue))==(XValue|YValue)) {
     szhints[sn].x=geom_f[sn]&XNegative?
@@ -1584,6 +1659,256 @@ int sn;
   }
 }
 
+VOID xstoreres()
+{
+  char buf[256];
+  XColor xcol;
+
+  if (!XGetDefault(dpy[0],prog_name,"font") && font_name) {
+    sprintf(buf,"%.99s.%s:%.99s\n",prog_name,"font",font_name);
+    XChangeProperty(dpy[0],DefaultRootWindow(dpy[0]),
+		    XA_RESOURCE_MANAGER,XA_STRING,8,PropModeAppend,
+		    buf,strlen(buf));
+  }
+  if (!XGetDefault(dpy[0],prog_name,"title") && title[0]) {
+    sprintf(buf,"%.99s.%s:%.99s\n",prog_name,"title",title[0]);
+    XChangeProperty(dpy[0],DefaultRootWindow(dpy[0]),
+		    XA_RESOURCE_MANAGER,XA_STRING,8,PropModeAppend,
+		    buf,strlen(buf));
+  }
+  if (!XGetDefault(dpy[0],prog_name,"foreground")) {
+    xcol.pixel=fgpix[0];
+    XQueryColor(dpy[0],cmap[0],&xcol);
+    sprintf(buf,"%.99s.%s:#%04x%04x%04x\n",prog_name,"foreground",
+	    xcol.red,xcol.green,xcol.blue);
+    XChangeProperty(dpy[0],DefaultRootWindow(dpy[0]),
+		    XA_RESOURCE_MANAGER,XA_STRING,8,PropModeAppend,
+		    buf,strlen(buf));
+  }
+  if (!XGetDefault(dpy[0],prog_name,"background")) {
+    xcol.pixel=bgpix[0];
+    XQueryColor(dpy[0],cmap[0],&xcol);
+    sprintf(buf,"%.99s.%s:#%04x%04x%04x\n",prog_name,"background",
+	    xcol.red,xcol.green,xcol.blue);
+    XChangeProperty(dpy[0],DefaultRootWindow(dpy[0]),
+		    XA_RESOURCE_MANAGER,XA_STRING,8,PropModeAppend,
+		    buf,strlen(buf));
+  }
+  if (!XGetDefault(dpy[0],prog_name,"mark")) {
+    xcol.pixel=mkpix[0];
+    XQueryColor(dpy[0],cmap[0],&xcol);
+    sprintf(buf,"%.99s.%s:#%04x%04x%04x\n",prog_name,"mark",
+	    xcol.red,xcol.green,xcol.blue);
+    XChangeProperty(dpy[0],DefaultRootWindow(dpy[0]),
+		    XA_RESOURCE_MANAGER,XA_STRING,8,PropModeAppend,
+		    buf,strlen(buf));
+  }
+  if (!XGetDefault(dpy[0],prog_name,"menubutton")) {
+    sprintf(buf,"%.99s.%s:%d\n",prog_name,"menubutton",mbutton[0]);
+    XChangeProperty(dpy[0],DefaultRootWindow(dpy[0]),
+		    XA_RESOURCE_MANAGER,XA_STRING,8,PropModeAppend,
+		    buf,strlen(buf));
+  }
+  if (!XGetDefault(dpy[0],prog_name,"keyboard")) {
+    sprintf(buf,"%.99s.%s:%d\n",prog_name,"keyboard",keyboard[0]);
+    XChangeProperty(dpy[0],DefaultRootWindow(dpy[0]),
+		    XA_RESOURCE_MANAGER,XA_STRING,8,PropModeAppend,
+		    buf,strlen(buf));
+  }
+  if (!XGetDefault(dpy[0],prog_name,"tdelay")) {
+    sprintf(buf,"%.99s.%s:%f\n",prog_name,"tdelay",nimmstich[0][0]/10.0);
+    XChangeProperty(dpy[0],DefaultRootWindow(dpy[0]),
+		    XA_RESOURCE_MANAGER,XA_STRING,8,PropModeAppend,
+		    buf,strlen(buf));
+  }
+  if (!XGetDefault(dpy[0],prog_name,"cards")) {
+    sprintf(buf,"%.99s.%s:%d\n",prog_name,"cards",blatt[0]);
+    XChangeProperty(dpy[0],DefaultRootWindow(dpy[0]),
+		    XA_RESOURCE_MANAGER,XA_STRING,8,PropModeAppend,
+		    buf,strlen(buf));
+  }
+  if (!XGetDefault(dpy[0],prog_name,"large")) {
+    sprintf(buf,"%.99s.%s:%d\n",prog_name,"large",desk[0].large);
+    XChangeProperty(dpy[0],DefaultRootWindow(dpy[0]),
+		    XA_RESOURCE_MANAGER,XA_STRING,8,PropModeAppend,
+		    buf,strlen(buf));
+  }
+  if (!XGetDefault(dpy[0],prog_name,"down")) {
+    sprintf(buf,"%.99s.%s:%d\n",prog_name,"down",!sort1[0]);
+    XChangeProperty(dpy[0],DefaultRootWindow(dpy[0]),
+		    XA_RESOURCE_MANAGER,XA_STRING,8,PropModeAppend,
+		    buf,strlen(buf));
+  }
+  if (!XGetDefault(dpy[0],prog_name,"alt")) {
+    sprintf(buf,"%.99s.%s:%d\n",prog_name,"alt",alternate[0]);
+    XChangeProperty(dpy[0],DefaultRootWindow(dpy[0]),
+		    XA_RESOURCE_MANAGER,XA_STRING,8,PropModeAppend,
+		    buf,strlen(buf));
+  }
+  if (!XGetDefault(dpy[0],prog_name,"briefmsg")) {
+    sprintf(buf,"%.99s.%s:%d\n",prog_name,"briefmsg",briefmsg[0]);
+    XChangeProperty(dpy[0],DefaultRootWindow(dpy[0]),
+		    XA_RESOURCE_MANAGER,XA_STRING,8,PropModeAppend,
+		    buf,strlen(buf));
+  }
+  if (!XGetDefault(dpy[0],prog_name,"trickl2r")) {
+    sprintf(buf,"%.99s.%s:%d\n",prog_name,"trickl2r",trickl2r[0]);
+    XChangeProperty(dpy[0],DefaultRootWindow(dpy[0]),
+		    XA_RESOURCE_MANAGER,XA_STRING,8,PropModeAppend,
+		    buf,strlen(buf));
+  }
+  if (!XGetDefault(dpy[0],prog_name,"language")) {
+    sprintf(buf,"%.99s.%s:%.99s\n",prog_name,"language",idxlang(lang[0]));
+    XChangeProperty(dpy[0],DefaultRootWindow(dpy[0]),
+		    XA_RESOURCE_MANAGER,XA_STRING,8,PropModeAppend,
+		    buf,strlen(buf));
+  }
+  if (!XGetDefault(dpy[0],prog_name,"hint")) {
+    sprintf(buf,"%.99s.%s:%d\n",prog_name,"hint",hints[0]);
+    XChangeProperty(dpy[0],DefaultRootWindow(dpy[0]),
+		    XA_RESOURCE_MANAGER,XA_STRING,8,PropModeAppend,
+		    buf,strlen(buf));
+  }
+  if (!XGetDefault(dpy[0],prog_name,"shortcut")) {
+    sprintf(buf,"%.99s.%s:%d\n",prog_name,"shortcut",abkuerz[0]);
+    XChangeProperty(dpy[0],DefaultRootWindow(dpy[0]),
+		    XA_RESOURCE_MANAGER,XA_STRING,8,PropModeAppend,
+		    buf,strlen(buf));
+  }
+  if (!XGetDefault(dpy[0],prog_name,"alias")) {
+    sprintf(buf,"%.99s.%s:%.9s %.9s\n",prog_name,"alias",
+	    spnames[0][0][0],spnames[0][1][0]);
+    XChangeProperty(dpy[0],DefaultRootWindow(dpy[0]),
+		    XA_RESOURCE_MANAGER,XA_STRING,8,PropModeAppend,
+		    buf,strlen(buf));
+  }
+  if (!XGetDefault(dpy[0],prog_name,"ready")) {
+    sprintf(buf,"%.99s.%s:%d\n",prog_name,"ready",1);
+    XChangeProperty(dpy[0],DefaultRootWindow(dpy[0]),
+		    XA_RESOURCE_MANAGER,XA_STRING,8,PropModeAppend,
+		    buf,strlen(buf));
+  }
+  XCloseDisplay(dpy[0]);
+  strcpy(buf,"+");
+  strcat(buf,lanip[0]);
+  if (strchr(buf,':')) *strchr(buf,':')=0;
+  execlp("xhost","xhost",buf,NULL);
+  fprintf(stderr,"xhost not found\n");
+}
+
+VOID read_cards()
+{
+  FILE *f;
+  int b,cd,cdst,bufidx,buflen=200000;
+  char *buf,line[20];
+
+  if (!cards_file) return;
+  f=fopen(cards_file,"r");
+  if (!f) return;
+  buf=malloc(buflen);
+  if (!buf) nomem();
+  bufidx=0;
+  for (cd=0;cd<sizeof(map_gif)/sizeof(map_gif[0]);cd++) {
+    while (fscanf(f,"unsigned char %4s",line)!=1) {
+      if (feof(f)) {
+	fclose(f);
+	fprintf(stderr,"Error reading cards from %s\n",cards_file);
+	return;
+      }
+      fscanf(f,"%*s ");
+    }
+    if (strncmp(map_gif[cd].name,line,strlen(map_gif[cd].name))) {
+      cd--;
+      continue;
+    }
+    cdst=bufidx;
+    do {
+      if (bufidx<buflen && fscanf(f,"%i",&b)==1) {
+	buf[bufidx++]=b;
+      }
+    } while (fgetc(f)!='}' && !feof(f));
+    if (bufidx>=buflen || feof(f) ||
+	strcmp(buf+cdst,"GIF87aX") ||
+	(buf[cdst+8]!=(char)0x45 && buf[cdst+8]!=(char)0x8a)) {
+      cd--;
+      bufidx=cdst;
+      continue;
+    }
+    *(map_gif[cd].pos)=buf+cdst;
+    ggcards=0;
+  }
+  fclose(f);
+}
+
+VOID set_conames()
+{
+  int ln,sn;
+  char buf[40];
+
+  if (!usrname[0][0]) strcpy(usrname[0],"~");
+  if (!usrname[1][0]) strcpy(usrname[1],"~");
+  for (ln=0;ln<NUM_LANG;ln++) {
+    if (!strcmp(conames[0][0],textarr[TX_COMPUTER].t[ln]) &&
+	!strcmp(conames[0][1],textarr[TX_LINKS].t[ln])) {
+      strcpy(conames[0][0],"~");
+      strcpy(conames[0][1],"~");
+    }
+    if (!strcmp(conames[1][0],textarr[TX_COMPUTER].t[ln]) &&
+	!strcmp(conames[1][1],textarr[TX_RECHTS].t[ln])) {
+      strcpy(conames[1][0],"~");
+      strcpy(conames[1][1],"~");
+    }
+  }
+  for (sn=0;sn<2;sn++) {
+    if (!conames[sn][0][0]) strcpy(conames[sn][0],"~");
+    if (!conames[sn][1][0]) strcpy(conames[sn][1],"~");
+  }
+  for (ln=0;ln<NUM_LANG;ln++) {
+    switch (numsp) {
+    case 0:
+      for (sn=0;sn<3;sn++) {
+	if (!spnames[sn][0][ln][0]) {
+	  sprintf(spnames[sn][0][ln],"%s%d",textarr[TX_COMPUTER].t[ln],sn+1);
+	}
+      }
+      break;
+    case 1:
+      sprintf(buf,"%s %s",usrname[0],usrname[1]);
+      extractnamln(0,buf,ln);
+      sprintf(buf,"%s %s",conames[0][0],conames[0][1]);
+      extractnamln(1,buf,ln);
+      if (!spnames[1][0][ln][0]) {
+	strcpy(spnames[1][0][ln],textarr[TX_COMPUTER].t[ln]);
+	strcpy(spnames[1][1][ln],textarr[TX_LINKS].t[ln]);
+      }
+      sprintf(buf,"%s %s",conames[1][0],conames[1][1]);
+      extractnamln(2,buf,ln);
+      if (!spnames[2][0][ln][0]) {
+	strcpy(spnames[2][0][ln],textarr[TX_COMPUTER].t[ln]);
+	strcpy(spnames[2][1][ln],textarr[TX_RECHTS].t[ln]);
+      }
+      break;
+    case 2:
+      if (!irc_play) {
+	sprintf(buf,"%s %s",usrname[0],usrname[1]);
+	extractnamln(0,buf,ln);
+      }
+      sprintf(buf,"%s %s",conames[1][0],conames[1][1]);
+      extractnamln(2,buf,ln);
+      if (!spnames[2][0][ln][0]) {
+	strcpy(spnames[2][0][ln],textarr[TX_COMPUTER].t[ln]);
+      }
+      break;
+    case 3:
+      if (!irc_play) {
+	sprintf(buf,"%s %s",usrname[0],usrname[1]);
+	extractnamln(0,buf,ln);
+      }
+      break;
+    }
+  }
+}
+
 VOID xinit(argc,argv)
 int argc;
 char *argv[];
@@ -1608,6 +1933,7 @@ char *argv[];
   keyboard[0]=keyboard[1]=keyboard[2]=1;
   abkuerz[0]=abkuerz[1]=abkuerz[2]=1;
   trickl2r[0]=trickl2r[1]=trickl2r[2]=1;
+  blatt[0]=blatt[1]=blatt[2]=1;
   prog_name=strrchr(argv[0],'/');
   if (prog_name) prog_name++;
   else prog_name=argv[0];
@@ -1862,6 +2188,9 @@ char *argv[];
       irc_logappend=0;
       irc_play=1;
     }
+    else if (!strcmp(argv[1],"-pk")) {
+      pkoption=1;
+    }
     else if ((argv[1][0]!='-') && numsp<3) {
       disp_name[numsp++]=argv[1];
     }
@@ -1964,6 +2293,7 @@ char *argv[];
       else if (!strcmp(argv[1],"-ircserver")) {
 	irc_host=argv[2];
 	irc_play=1;
+	irc_hostset=1;
       }
       else if (!strcmp(argv[1],"-ircport")) {
 	irc_port=atoi(argv[2]);
@@ -2013,7 +2343,7 @@ char *argv[];
     if (unformatted<0) unformatted=1;
     for (i=0;i<3;i++) {
       if (strateg[i]<-4) strateg[i]=-4;
-      else if (strateg[i]>4) strateg[i]=4;
+      else if (strateg[i]>0) strateg[i]=0;
     }
   }
   else {
@@ -2023,14 +2353,25 @@ char *argv[];
   if (irc_play) {
     setsum(0);
     read_opt();
+    set_conames();
     irc_init();
   }
   else {
+    read_opt();
     for (sn=1;sn<numsp;sn++) {
       xinitres(sn);
     }
     read_opt();
   }
+  for (sn=0;sn<3;sn++) {
+    if (!lanip[sn][0]) {
+      strcpy(lanip[sn],"127.0.0.1");
+    }
+  }
+  if (de_gif[3][0][8]==0x45) {
+    ggcards=1;
+  }
+  read_cards();
   for (sn=0;sn<numsp;sn++) {
     selpos[sn].act=-1;
     xinitwin(sn,sn?0:theargc,sn?(char **)0:theargv);
@@ -2041,23 +2382,8 @@ char *argv[];
       tspnames[sn][0].t[ln]=spnames[sn][0][ln];
       tspnames[sn][1].t[ln]=spnames[sn][1][ln];
     }
-    switch (numsp) {
-    case 0:
-      for (sn=0;sn<3;sn++) {
-	sprintf(spnames[sn][0][ln],"%s%d",textarr[TX_COMPUTER].t[ln],sn+1);
-      }
-      break;
-    case 1:
-      strcpy(spnames[1][0][ln],textarr[TX_COMPUTER].t[ln]);
-      strcpy(spnames[1][1][ln],textarr[TX_LINKS].t[ln]);
-      strcpy(spnames[2][0][ln],textarr[TX_COMPUTER].t[ln]);
-      strcpy(spnames[2][1][ln],textarr[TX_RECHTS].t[ln]);
-      break;
-    case 2:
-      strcpy(spnames[2][0][ln],textarr[TX_COMPUTER].t[ln]);
-      break;
-    }
   }
+  set_conames();
   if (!irc_play) save_opt();
 }
 
@@ -2970,6 +3296,7 @@ int f;
       break;
     case WEITER:
       newsn=-1;
+      if (numsp==1) newsn=0;
       break;
     case REVOLUTION:
       newsn=tauschply;

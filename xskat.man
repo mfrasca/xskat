@@ -1,7 +1,7 @@
 .\" -*- nroff -*-
 .\"
 .\" xskat - a card game for 1 to 3 players.
-.\" Copyright (C) 2000  Gunter Gerhardt
+.\" Copyright (C) 2004  Gunter Gerhardt
 .\"
 .\" This program is free software; you can redistribute it freely.
 .\" Use it at your own risk; there is NO WARRANTY.
@@ -17,7 +17,7 @@
 .\"      where x.y is the version of the original program
 .\"      and z is an arbitrary suffix.
 .\"
-.TH XSKAT 6 "October 2000"
+.TH XSKAT 6 "May 2004"
 .SH NAME
 xskat \- a card game for 1 to 3 players.
 .SH SYNOPSIS
@@ -158,6 +158,7 @@ xskat \- a card game for 1 to 3 players.
 .IR #ofgames ]
 .RB [ \-opt
 .IR file ]
+.RB [ \-pk ]
 .RI [ player\fB@\fIdisplay... ]
 .SH DESCRIPTION
 .B XSkat
@@ -172,9 +173,7 @@ The rest of the game controls should be fairly obvious.
 .PP
 An introduction to Skat can be found at
 .br
-http://www.gulu.net/xskat/ or
-.br
-http://private.addcom.de/g/xskat/
+http://www.xskat.de/xskat.html
 .SH OPTIONS
 In the following descriptions, the player starting
 .B XSkat
@@ -266,14 +265,14 @@ Deal the cards slowly (default).
 Show a short help text.
 .TP
 .B \-frenchcards
-Play with French suited cards (default).
+Play with French suited cards.
 .TP
 .B \-french4cards
 Change the colors of diamond and spade to orange and green,
-so that the 4 suits have easily distinguishable colors.
+so that the 4 suits have easily distinguishable colors (default).
 .TP
 .B \-germancards
-Use original cards from Altenburg.
+Use German cards.
 .TP
 .B \-german4cards
 Change the color of acorns to brown,
@@ -303,10 +302,10 @@ Sort cards downwards (default).
 Sort cards upwards.
 .TP
 .B \-alt
-Sort cards in alternating order (default).
+Sort cards in alternating order.
 .TP
 .B \-seq
-Sort cards in sequential order.
+Sort cards in sequential order (default).
 .TP
 .BI \-list " filename"
 The file for saving/restoring the game list
@@ -377,7 +376,7 @@ The player who starts dealing cards (default: 2).
 .TP
 .PD
 .BI \-s3 " number"
-Change the strategy used by the computer players.
+Change the playing strenght of the computer players.
 .br
 .B s1
 corresponds to the left computer in single player mode
@@ -390,13 +389,7 @@ corresponds to the right computer in single player mode.
 is only useful with
 .BR \-auto .
 .br
-The number must be between \-4 and 4 and has the following meaning:
-.nf
-.ne 3
-\-4 : computer likes to pass.
- 0 : normal behavior (default).
- 4 : computer tends to say at least 18.
-.fi
+The number must be between \-4 (weak) and 0 (default).
 .TP
 .B \-ramsch
 Play a game of Ramsch when all players pass.
@@ -755,6 +748,13 @@ This may be changed with the
 .B useoptfile
 resource.
 .TP
+.BI \-pk
+If you want the computer to deal a Good Hand every time.
+(as requested by Petra K.)
+Alternatively, pressing F6 three times will result in
+a Good Hand for the next game.
+Does not work in multiplayer mode.
+.TP
 .IB player @ display
 Specifies the display of the second and third player
 (but is ignored for IRC games).
@@ -1102,13 +1102,11 @@ irc.fu-berlin.de
 Leading blanks are important!
 Change the irc server line appropriately.
 .SH AUTHOR
-Gunter Gerhardt (gerhardt@draeger.com)
+Gunter Gerhardt
 .PP
-The latest version is always available first at
+The latest version is always available at
 .br
-ftp://ibiblio.org/pub/Linux/Incoming/ and then at
-.br
-ftp://ibiblio.org/pub/Linux/games/multiplayer/cards/
+http://www.xskat.de/xskat.html
 .nf
 
 This program is free software; you can redistribute it freely.
@@ -1124,4 +1122,8 @@ provided that the following conditions are met:
      the version number is of the form x.y.z,
      where x.y is the version of the original program
      and z is an arbitrary suffix.
+
+Card images used with permission by
+Spielkartenfabrik Altenburg GmbH, Marke ASS Altenburger
+Leipziger Strasse 7, 04600 Altenburg, Germany
 .fi

@@ -1,3 +1,14 @@
+Changes in 4.0 (25 May 2004):
+ - Computer plays less predictable
+ - Passes the game a lot less often
+ - Can play the final winning trick
+ - Selectable playing strength
+ - Deals a Good Hand with -pk or F6,F6,F6
+ - LAN game can be started interactively
+ - Player/computer names changeable
+ - More card images
+ - Replay and Hand? forms improved
+ - Man page accessible from inside the game
 
 Changes in 3.4 (29 Oct 2000):
  - Ramsch variation: Skat goes to loser
