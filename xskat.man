@@ -1,12 +1,23 @@
 .\" -*- nroff -*-
 .\"
-.\" xskat \- a card game for 1 to 3 players.
-.\" Copyright (C) 1998  Gunter Gerhardt
+.\" xskat - a card game for 1 to 3 players.
+.\" Copyright (C) 2000  Gunter Gerhardt
 .\"
 .\" This program is free software; you can redistribute it freely.
 .\" Use it at your own risk; there is NO WARRANTY.
 .\"
-.TH XSKAT 6 "November 1998"
+.\" Redistribution of modified versions is permitted
+.\" provided that the following conditions are met:
+.\" 1. All copyright & permission notices are preserved.
+.\" 2.a) Only changes required for packaging or porting are made.
+.\"   or
+.\" 2.b) It is clearly stated who last changed the program.
+.\"      The program is renamed or
+.\"      the version number is of the form x.y.z,
+.\"      where x.y is the version of the original program
+.\"      and z is an arbitrary suffix.
+.\"
+.TH XSKAT 6 "March 2000"
 .SH NAME
 xskat \- a card game for 1 to 3 players.
 .SH SYNOPSIS
@@ -38,16 +49,22 @@ xskat \- a card game for 1 to 3 players.
 .IR color ]
 .RB [ \-mb
 .IR button# ]
+.RB [ \-keyboard
+.IR number ]
 .RB [ \-tdelay
 .IR sec ]
 .RB [ \-fastdeal ]
 .RB [ \-slowdeal ]
 .RB [ \-help | \-h ]
+.RB [ \-frenchcards ]
+.RB [ \-french4cards ]
+.RB [ \-germancards ]
+.RB [ \-german4cards ]
 .RB [ \-color ]
 .RB [ \-mono ]
 .RB [ \-color1
 .IR color ]
-.RB ".." " " [ \-color20
+.RB ".." " " [ \-color4
 .IR color ]
 .RB [ \-large ]
 .RB [ \-small ]
@@ -104,6 +121,11 @@ xskat \- a card game for 1 to 3 players.
 .RB [ \-noschenken ]
 .RB [ \-hint ]
 .RB [ \-nohint ]
+.RB [ \-newrules ]
+.RB [ \-oldrules ]
+.RB [ \-shortcut ]
+.RB [ \-noshortcut ]
+.RB [ \-askshortcut ]
 .RB [ \-irc ]
 .RB [ \-noirc ]
 .RB [ \-irctelnet
@@ -124,6 +146,8 @@ xskat \- a card game for 1 to 3 players.
 .IR number ]
 .RB [ \-irclog
 .IR file ]
+.RB [ \-irclogappend ]
+.RB [ \-irclogoverwrite ]
 .RB [ \-auto
 .IR #ofgames ]
 .RB [ \-opt
@@ -136,7 +160,8 @@ as defined by the official German Skatordnung.
 .PP
 Up to 3 players may be simulated by the computer.
 .PP
-After starting the game a mouse click will bring up a menu.
+After starting the game a mouse click or ESC/F1 will bring up a menu.
+Other useful keys are: Space, Return, Tab, Cursor left/right/up/down.
 The rest of the game controls should be fairly obvious.
 .SH OPTIONS
 In the following descriptions, the player starting
@@ -172,9 +197,17 @@ The usual X toolkit options.
 The color of dialog buttons.
 .TP
 .BI \-mark " color"
-The color of the marks that indicate who is
-forehand (during bidding) or who is the Soloist
-or which card the computer would play (default: red or black).
+The color of the marks that indicate
+.br
+who is forehand (during bidding),
+.br
+who is the Soloist,
+.br
+which card the computer would play,
+.br
+or the keyboard focus
+.br
+(default: red or black).
 .TP
 .B \-3d
 Use a 3D look for dialogs (default).
@@ -194,6 +227,16 @@ The color used for the lines around the bottom and right sides of 3D buttons
 The number of the mouse button that brings up the menu
 (default: 0 = any button).
 .TP
+.BI \-keyboard " number"
+Define how much of the user interface may be controlled by the keyboard.
+The number must be between 0 and 2 and has the following meaning:
+.nf
+.ne 3
+ 0 : Nothing.
+ 1 : More (default).
+ 2 : Everything.
+.fi
+.TP
 .BI \-tdelay " seconds"
 Specifies how long the last trick will be visible.
 A delay of more than 10 seconds means that the trick will be
@@ -210,16 +253,33 @@ Deal the cards slowly (default).
 .B \-help
 Show a short help text
 .TP
+.B \-frenchcards
+Play with French suited cards (default).
+.TP
+.B \-french4cards
+Change the colors of diamond and spade to orange and green,
+so that the 4 suits have easily distinguishable colors.
+.TP
+.B \-germancards
+Use original cards from Altenburg.
+.TP
+.B \-german4cards
+Change the color of acorns to brown,
+so that the 4 suits have easily distinguishable colors.
+.TP
 .B \-color
-Use colored cards (default for color displays).
+Use colored cards.
+If there are not enough colors left, the number of colors used
+to draw the cards will be reduced appropriately (default).
 .TP
 .B \-mono
-Use b&w cards (default for grayscale displays
-or if there are not enough colors left).
+Use b&w cards.
 .TP
-.BR \-color1 " .. " \-color20
-Redefine colors.
-The first 4 colors are used for the suits diamond, heart, spade and club.
+.BR \-color1 " .. " \-color4
+Redefine the colors of the suits diamond, heart, spade and club.
+Selecting
+.B \-french4cards
+overrides the colors for diamond and spade.
 .TP
 .BR \-large " and " \-small
 Select the size of the main window (default: as large as possible).
@@ -278,7 +338,8 @@ Not available for IRC play.
 See also section FILES below.
 .TP
 .BI \-lang " language"
-Currently available: english and german (default: see Imakefile/Makefile).
+Currently available: English and German
+(default: $LANG is tried first. Then: see Imakefile/Makefile).
 .TP
 .BI \-start " number"
 The player who starts dealing cards (default: 2).
@@ -306,6 +367,7 @@ is only useful with
 .br
 The number must be between \-4 and 4 and has the following meaning:
 .nf
+.ne 3
 \-4 : computer likes to pass.
  0 : normal behavior (default).
  4 : computer tends to say at least 18.
@@ -372,23 +434,17 @@ because this game does not count towards completing the Ramschround.
 .TP
 .BI \-bockevents " number"
 Specify the events that cause a Bockround.
-.br
+.nf
+.ne 8
 (1) A game is lost with 60 points.
-.br
 (2) A successful Grand Hand.
-.br
 (4) A successful Kontra (opponents win).
-.br
 (8) A game with Kontra & Re.
-.br
 (16) A player's score ends in 3 equal digits.
-.br
 (32) A player's score is a multiple of 100.
-.br
 (64) A game value of +72 or more.
-.br
 (128) A game value of +96 or more.
-.br
+.fi
 Add up the numbers in parentheses to specify the
 desired events (default: 0).
 .br
@@ -469,6 +525,28 @@ Put a mark over the card the computer would play.
 .B \-nohint
 Don't show computer hints (default).
 .TP
+.B \-newrules
+Use the official rules of 01/01/1999:
+.br
+Lost Hand games count double.
+.br
+The Grand Ouvert multiplier is 24.
+.br
+(default)
+.TP
+.B \-oldrules
+Lost Hand games count simple.
+The Grand Ouvert multiplier is 36.
+.TP
+.B \-shortcut
+Always finish the game when the remaining tricks will all go to one side.
+.TP
+.B \-noshortcut
+Play each trick.
+.TP
+.B \-askshortcut
+Ask whether a shortcut should be taken (default).
+.TP
 .B \-irc
 Play via Internet Relay Chat.
 This option will establish a connection to an IRC server
@@ -499,9 +577,9 @@ If you are sitting behind a firewall, a program like rtelnet must be used
 and you may have to set $SOCKS_SERVER to the name
 of your firewall host (default: telnet).
 .TP
-.BI \-ircserver " hostname"
+.BI \-ircserver " host-name"
 Select an IRC server near you! (default: $IRCSERVER
-or irc.uni-paderborn.de, if not changed in the Imakefile/Makefile)
+or irc.fu-berlin.de, if not changed in the Imakefile/Makefile)
 .TP
 .BI \-ircport " number"
 The port of the IRC server to connect to (default: $IRCPORT or 6667).
@@ -540,6 +618,12 @@ Everything sent to or received from the IRC server is saved to this file
 It may be useful for debugging
 (default: $HOME/.xskat.ilg or ./xskat.ilg if HOME isn't set).
 .TP
+.B \-irclogappend
+Append output to the log file.
+.TP
+.B \-irclogoverwrite
+Overwrite existing log file (default).
+.TP
 .B IRC commands:
 .br
 .BR /nick " name, " /nick
@@ -560,8 +644,12 @@ Trying to stop the listing will terminate the program.
 joins your channel or sends a message to you.
 The bell is off initially.
 .br
+.B /quit
+\- terminate
+.BR XSkat .
+.br
 .B /sync
-\- if messages get lost due to a netsplit (or because someone left the
+\- if messages get lost due to a net-split (or because someone left the
 channel during play),
 .B XSkat
 will detect this and in most cases should be able to synchronize
@@ -582,7 +670,7 @@ because that player will determine the rules of the game.
 \- set the official rules.
 .br
 .B /ramsch, /sramsch, /kontra, /bock, /resumebock,
-.B /spitze, /revolution, /klopfen, /schenken,
+.B /spitze, /revolution, /klopfen, /schenken, /oldrules,
 .B /bockevents, /alist, /tlist, /start, /s1
 \- change the rules of the game.
 All of these require an argument (a number or True/False) just like
@@ -592,8 +680,7 @@ the resources with the same name.
 \- show the current rules to everyone on your channel.
 .TP
 .B Notes:
-The IRC version numbers of all participating programs must be equal.
-The version is displayed during startup.
+The version numbers of all participating programs must be equal.
 .br
 Most options cannot be changed during the game.
 Options that can be changed are not saved to a file.
@@ -632,7 +719,7 @@ resource.
 .TP
 .IB player @ display
 Specifies the display of the second and third player
-(but ignored for IRC games).
+(but is ignored for IRC games).
 The
 .IB player @
 part may be omitted if the
@@ -644,7 +731,7 @@ resource is set on
 Command line options take precedence over resource specifications
 for player1.
 .TP
-.B font, title, foreground, background
+.B geometry, font, title, foreground, background
 The usual X resources.
 .TP
 .B mark
@@ -681,6 +768,10 @@ True or False (see
 (see
 .BR \-mb ).
 .TP
+.B keyboard
+(see
+.BR \-keyboard ).
+.TP
 .B tdelay
 (see
 .BR \-tdelay ).
@@ -689,13 +780,18 @@ True or False (see
 True or False (see
 .BR \-fastdeal " and " \-slowdeal ).(#)
 .TP
+.B cards
+0, 1, 2 or 3 (see
+.BR \-frenchcards ", " \-french4cards ", "
+.BR \-germancards " and " \-german4cards ).
+.TP
 .B color
 True or False (see
 .BR \-color " and " \-mono ).
 .TP
-.B color1 .. color20
+.B color1 .. color4
 (see
-.BR \-color1 " .. " \-color20 ).
+.BR \-color1 " .. " \-color4 ).
 .TP
 .B large
 True or False (see
@@ -739,7 +835,7 @@ True or False (see
 .TP
 .B language
 (see
-.BR \-lang ).(#)
+.BR \-lang ).
 .TP
 .B start
 (see
@@ -791,7 +887,15 @@ True or False (see
 .TP
 .B hint
 True or False (see
-.BR \-hint " and " \-nohint ).(#)
+.BR \-hint " and " \-nohint ).
+.TP
+.B oldrules
+True or False (see
+.BR \-oldrules " and " \-newrules ).(#)
+.TP
+.B shortcut
+0, 1 or 2 (see
+.BR \-noshortcut ", " \-askshortcut " and " \-shortcut ).
 .TP
 .B irc
 True or False (see
@@ -836,6 +940,10 @@ True or False (see
 .B irclog
 (see
 .BR \-irclog ).(#)
+.TP
+.B irclogappend
+True or False (see
+.BR \-irclogappend " and " \-irclogoverwrite ).(#)
 .TP
 .B opt
 (see
@@ -909,14 +1017,57 @@ display.
 .PP
 If you replay a game with your own cards, it doesn't matter
 whether 'Forehand changes' is set to 'yes' or 'no'.
+.PP
+Some versions of telnet have a bug, that prevents them from
+reading input from a pipe correctly.
+See README.IRC for a fix or put this into your ~/.telnetrc:
+.nf
+
+.ne 3
+irc.fu-berlin.de
+ set echo off
+ set escape off
+ set rlogin off
+ set flushoutput off
+ set interrupt off
+ set quit off
+ set eof off
+ set erase off
+ set kill off
+ set lnext off
+ set susp off
+ set reprint off
+ set worderase off
+ set start off
+ set stop off
+ set forw1 off
+ set forw2 off
+ set ayt off
+
+.fi
+Leading blanks are important!
+Change the irc server line appropriately.
 .SH AUTHOR
 Gunter Gerhardt (gerhardt@draeger.com)
 .PP
 The latest version is always available first at
 .br
-ftp://sunsite.unc.edu/pub/Linux/Incoming/ and then at
+ftp://metalab.unc.edu/pub/Linux/Incoming/ and then at
 .br
-ftp://sunsite.unc.edu/pub/Linux/games/multiplayer/cards/
-.PP
+ftp://metalab.unc.edu/pub/Linux/games/multiplayer/cards/
+.nf
+
 This program is free software; you can redistribute it freely.
 Use it at your own risk; there is NO WARRANTY.
+
+Redistribution of modified versions is permitted
+provided that the following conditions are met:
+1. All copyright & permission notices are preserved.
+2.a) Only changes required for packaging or porting are made.
+  or
+2.b) It is clearly stated who last changed the program.
+     The program is renamed or
+     the version number is of the form x.y.z,
+     where x.y is the version of the original program
+     and z is an arbitrary suffix.
+.fi

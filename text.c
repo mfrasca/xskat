@@ -1,23 +1,34 @@
 
 /*
     xskat - a card game for 1 to 3 players.
-    Copyright (C) 1998  Gunter Gerhardt
+    Copyright (C) 2000  Gunter Gerhardt
 
     This program is free software; you can redistribute it freely.
     Use it at your own risk; there is NO WARRANTY.
+
+    Redistribution of modified versions is permitted
+    provided that the following conditions are met:
+    1. All copyright & permission notices are preserved.
+    2.a) Only changes required for packaging or porting are made.
+      or
+    2.b) It is clearly stated who last changed the program.
+         The program is renamed or
+         the version number is of the form x.y.z,
+         where x.y is the version of the original program
+         and z is an arbitrary suffix.
 */
 
 #define TEXT_C
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 #include "defs.h"
 #include "text.h"
 
-#define VERSION   " X S K A T   3.0 "
-#define IRC_VERS  "1.0"
-#define COPYRIGHT "Copyright 1998 © Gunter Gerhardt"
+#define VERSION   " X S K A T   3.3 "
+#define COPYRIGHT "Copyright 2000 © Gunter Gerhardt"
 #define EMAIL     "(gerhardt@draeger.com)"
 #define HOMEPAGE  "XSkat Home Page"
 #define URL       "http://www.gulu.net/xskat/"
@@ -26,6 +37,9 @@ static char *ger_text[]={
   "Null","Karo","Herz","Pik","Kreuz","Grand","Ramsch",
   "As","10","König","Dame","Bube","9","8","7",
   " A"," 10"," K"," D"," B"," 9"," 8"," 7",
+  "Schellen","Rot","Grün","Eicheln",
+  "As","10","König","Ober","Unter","9","8","7",
+  " A"," 10"," K"," O"," U"," 9"," 8"," 7",
   "Hand gespielt","Schneider angesagt","Schwarz angesagt",
   "Ouvert gespielt","Ouvert Hand gespielt",
   "Passe","Ja","Nein","Spieler%d","Computer","links","rechts",
@@ -48,6 +62,7 @@ static char *ger_text[]={
   "Null Hand:35  Null ouvert Hand:59",
   "Revolution:92",
   " Angesagt ist "," Resultat ","Der Spielwert ist","Ende",
+  "Spiele gewonnen/verloren",
   "Protokoll","Weiter"," Protokoll ",
   "Im Skat ist:",
   "Im Skat war:",
@@ -58,7 +73,7 @@ static char *ger_text[]={
   COPYRIGHT,EMAIL,HOMEPAGE,URL,
   "Sortieren","Aufwärts","Abwärts","Alternierend","Sequentiell",
   "Normal",
-  "Gereizt bis:","Gespielt wird:","Letzter Stich:","Gedrückt:",
+  "Gereizt bis:","Gespielt wird:","Letzter Stich:",
   "Du bist dran !","Vordefiniertes Spiel","Speichern",
   "Dieses Programm ist freie Software;",
   "es kann frei verbreitet werden.",
@@ -69,12 +84,14 @@ static char *ger_text[]={
   "Ramsch spielen","Immer",
   "Schieberamsch"," Skat aufnehmen ? ","Fertig",
   "Buben dürfen nicht geschoben werden.",
+  "Unter dürfen nicht geschoben werden.",
   " Spielwert verdoppelt ","nimmt den Skat nicht auf.","klopft !",
   "VH schob:","MH schob:","HH schob:",
   "Kontra sagen","mit Kontra","ab 18","Kontra"," Kontra ! ","Re","von ",
   "Wiederholen"," Spiel wiederholen ","mit den Karten von","mir",
   "Vorhand wechselt:",
-  " Verzögerung ","Nimm Stich nach:","Sekunden","Maus-Klick",
+  " Geschwindigkeit ","Nimm Stich nach:","Sekunden","Maus-Klick",
+  "Abkürzung","Fragen","Nie",
   "Bock-Runden","+Ramsch","fortsetzen",
   " Bock-Ereignisse ","Bock-Ereignis","%d Bock-Ereignisse",
   "Bock-Spiele:"," Grand Hand ? ",
@@ -82,11 +99,12 @@ static char *ger_text[]={
   "Erfolgreicher Kontra","Kontra & Re angesagt",
   "NNN Punkte in Spielliste","N00 Punkte in Spielliste",
   "Spielwert ist >= +72","Spielwert ist >= +96",
-  " Menü-Button ","Jeder",
+  " Eingabe ","Tastatur",
+  "Menü-Button","Jeder","und ESC / F1",
   "Spitze","zählt 2","Spitze verloren !","Spitze !",
   "Spitze nicht erlaubt !",
   "Niedrigster Trumpf nicht auf der Hand.",
-  "Grand mit 4 Buben.",
+  "Grand mit 4.",
   " Null ist dicht ! "," Rest bei mir ! ","Karten aufdecken ?",
   "Revolution","Revolution: Karten austauschen !",
   "Vorhand","Mittelhand","Hinterhand",
@@ -94,17 +112,33 @@ static char *ger_text[]={
   "Schenken"," Schenken ","Spiel verloren geben ?","Geschenk annehmen ?",
   "Mitspieler lehnt ab.","Gegner geben auf.","Annehmen",
   "Geben","Schnell","Langsam",
-  IRC_VERS,"Verschiedene Versionen",
+  "Grafik & Text",
+  "Blatt","Französisch","Französisch (4 Farben)",
+  "Deutsch","Deutsch (4 Farben)",
+  "Sprache","Deutsch","English",
+  "Alte Regeln",
+  "Internet Relay Chat",
+  "IRC-Verbindung herstellen mit:",
+  "Zur IRC-Konfiguration siehe:",
+  "man xskat",
+  "Verschiedene Versionen",
+  "(Probleme? README.IRC oder 'man xskat' NOTES lesen!)",
   "Nicht auf diesem Kanal !",
+  "Nur ein Spieler sollte /go sagen !  Nochmal.",
+  "Sollte das /go%s sein ?",
+  "Verbunden mit Spieler%d.",
+  "Warten auf Spieler%d.",
   "\n Zum Spielen mit /join #xskatXYZ auf einen freien Kanal wechseln.",
   " Wenn alle Mitspieler auf diesem Kanal sind, muß einer /go eingeben,",
   " bzw. /go2, wenn nur 2 Spieler teilnehmen.",
   " Zeilen, die nicht mit / beginnen, werden als Nachricht verschickt.\n",
+  " ### XSkat-Zeiten: jeden Fr 13:30 und So 18:00 MEZ/MESZ ###\n",
   "Offizielle Regeln",
   "Position","Alternativ","Turnier","Geber",
   "Unbekanntes Kommando (versuche /help)",
   "/join kanal - wechsle auf einen anderen Kanal",
   "/go, /go2 - starte Spiel mit 3 bzw. 2 Spielern",
+  "/quit - beende XSkat",
   "/nick name, /nick - ändere Namen oder zeige ihn an",
   "/who - wer ist auf dem aktuellen Kanal ?",
   "/list, /list text - zeige Kanäle (die xskat/text enthalten)",
@@ -114,7 +148,7 @@ static char *ger_text[]={
   "/quote command args - für Spezialisten",
   "/default - aktiviere offizielle Regeln",
   "/ramsch n, /sramsch b, /kontra n, /bock n, /resumebock n,",
-  " /spitze n, /revolution b, /klopfen b, /schenken b,",
+  " /spitze n, /revolution b, /klopfen b, /schenken b, /oldrules b,",
   " /bockevents n, /alist b, /tlist b, /start n, /s1 n",
   " - ändere Regeln (n ist eine Zahl, b ist true/false)",
   "/rules - zeige allen Mitspielern aktuelle Regeln an"
@@ -124,6 +158,9 @@ static char *eng_text[]={
   "Null","Diamond","Heart","Spade","Club","Grand","Ramsch",
   "Ace","10","King","Queen","Jack","9","8","7",
   " A"," 10"," K"," Q"," J"," 9"," 8"," 7",
+  "Bells","Hearts","Leaves","Acorns",
+  "Ace","10","King","Ober","Unter","9","8","7",
+  " A"," 10"," K"," O"," U"," 9"," 8"," 7",
   "Played Hand","Schneider announced","Schwarz announced",
   "Played ouvert","Played ouvert Hand",
   "Pass","Yes","No","Player%d","Computer","left","right",
@@ -146,6 +183,7 @@ static char *eng_text[]={
   "Null Hand:35  Null ouvert Hand:59",
   "Revolution:92",
   " Playing "," Result ","The value of the game is","Quit",
+  "Games won/lost",
   "Log","Continue"," Log ",
   "Skat is:",
   "Skat was:",
@@ -156,8 +194,8 @@ static char *eng_text[]={
   COPYRIGHT,EMAIL,HOMEPAGE,URL,
   "Sort","Up","Down","Alternating","Sequential",
   "Normal",
-  "Bidding:","Playing:","Last trick:","Skat:",
-  "It's your turn !","predefined game","Save",
+  "Bidding:","Playing:","Last trick:",
+  "It's your turn !","      predefined game      ","Save",
   "This program is free software;",
   "you can redistribute it freely.",
   "Use it at your own risk;",
@@ -167,12 +205,14 @@ static char *eng_text[]={
   "Play Ramsch","Always",
   "Schieberamsch"," Pick up Skat ? ","Done",
   "It's not allowed to pass on jacks.",
+  "It's not allowed to pass on unters.",
   " Game score doubled ","doesn't pick up the Skat.","knocks !",
   "FH passed:","MH passed:","RH passed:",
   "Say Kontra","with Kontra","if 18","Kontra"," Kontra ! ","Re","by ",
   "Replay"," Replay game ","with the cards from","me",
   "Forehand changes:",
-  " Delay ","Take trick after:","seconds","mouse click",
+  " Speed ","Take trick after:","seconds","mouse click",
+  "Shortcut","Ask","Never",
   "Bockrounds","+Ramsch","resume",
   " Bock events ","Bock event","%d Bock events",
   "Bock games:"," Grand Hand ? ",
@@ -180,11 +220,12 @@ static char *eng_text[]={
   "Successful Kontra","Kontra & Re game",
   "NNN points in game list","N00 points in game list",
   "Game value is >= +72","Game value is >= +96",
-  " Menu button ","Any",
+  " Input ","Keyboard",
+  "Menu button","Any","and ESC / F1",
   "Spitze","counts 2","Lost Spitze !","Spitze !",
   "Spitze not allowed !",
   "Lowest trump not in your hand.",
-  "Grand with 4 jacks.",
+  "Grand with 4.",
   " Null is safe ! "," Rest is mine ! ","Show cards ?",
   "Revolution","Revolution: exchange cards !",
   "Forehand","Middlehand","Rearhand",
@@ -192,17 +233,33 @@ static char *eng_text[]={
   "Schenken"," Schenken ","Give up the game ?","Accept the gift ?",
   "Partner disagrees.","Opponents give up.","Accept",
   "Deal","Fast","Slow",
-  IRC_VERS,"Version mismatch",
+  "Graphic & Text",
+  "Cards","French","French (4 colors)",
+  "German","German (4 colors)",
+  "Language","Deutsch","English",
+  "Old rules",
+  "Internet Relay Chat",
+  "Establish IRC connection with:",
+  "For IRC configuration see:",
+  "man xskat",
+  "Version mismatch",
+  "(Problems? See README.IRC or 'man xskat' NOTES!)",
   "Not on this channel !",
+  "Only one player should say /go !  Try again.",
+  "Did you mean /go%s ?",
+  "Connected to Player%d.",
+  "Waiting for Player%d.",
   "\n Start playing by typing /join #xskatXYZ to switch to a free channel.",
   " When all players are on this channel, one player has to enter /go,",
   " or /go2, if there are only 2 players.",
   " Lines that don't begin with / are sent as messages.\n",
+  " ### XSkat times: every Fri 13:30 and Sun 18:00 MET/MEST ###\n",
   "Official rules",
   "Position","Alternative","Tournament","Dealer",
   "Unknown command (try /help)",
   "/join channel - switch to another channel",
   "/go, /go2 - start a game with 3 or 2 players",
+  "/quit - terminate XSkat",
   "/nick name, /nick - change or display your nickname",
   "/who - is on the current channel ?",
   "/list, /list string - show channels (matching xskat/string)",
@@ -212,51 +269,69 @@ static char *eng_text[]={
   "/quote command args - for specialists",
   "/default - set the official rules",
   "/ramsch n, /sramsch b, /kontra n, /bock n, /resumebock n,",
-  " /spitze n, /revolution b, /klopfen b, /schenken b,",
+  " /spitze n, /revolution b, /klopfen b, /schenken b, /oldrules b,",
   " /bockevents n, /alist b, /tlist b, /start n, /s1 n",
   " - change the rules of the game (n is a number, b is true/false)",
   "/rules - show the current rules to everyone on your channel"
 };
 
+tx_typ textarr[TX_NUM_TX];
+
 static struct {
   char **arr;
   char *name;
-} textdesc[] = {
-  {ger_text,"german"},
-  {eng_text,"english"}
+  char *langpref[5];
+} textdesc[NUM_LANG] = {
+  {ger_text,"german",{"de","german",0}},
+  {eng_text,"english",{"en",0}}
 };
 
 VOID init_text()
 {
-  textarr=textdesc[lang].arr;
+  int i,j;
+
+  for (i=0;i<NUM_LANG;i++) {
+    for (j=0;j<TX_NUM_TX;j++) {
+      textarr[j].t[i]=textdesc[i].arr[j];
+    }
+  }
 }
 
-int langidx(s,def)
+int langidx(s)
 char *s;
-int def;
 {
   char h[80];
-  int i;
+  int i,j;
 
   for (i=0;i<79 && s && *s;i++,s++) {
     h[i]=tolower(*s);
   }
   h[i]=0;
-  for (i=0;i<sizeof(textdesc)/sizeof(textdesc[0]);i++) {
+  for (i=0;i<NUM_LANG;i++) {
     if (!strcmp(textdesc[i].name,h)) return i;
   }
   if (s) {
     fprintf(stderr,"Unknown language '%s'.  Try one of:",h);
-    for (i=0;i<sizeof(textdesc)/sizeof(textdesc[0]);i++) {
+    for (i=0;i<NUM_LANG;i++) {
       if (i) fputc(',',stderr);
       fprintf(stderr," %s",textdesc[i].name);
     }
     fputs(".\n",stderr);
   }
-  if (!def) {
-    return -1;
+  s=getenv("LANG");
+  if (s) {
+    for (i=0;i<79 && s && *s;i++,s++) {
+      h[i]=tolower(*s);
+    }
+    h[i]=0;
+    for (i=0;i<NUM_LANG;i++) {
+      for (j=0;j<5 && textdesc[i].langpref[j];j++) {
+	if (!strncmp(h,textdesc[i].langpref[j],
+		     strlen(textdesc[i].langpref[j]))) return i;
+      }
+    }
   }
-  for (i=0;i<sizeof(textdesc)/sizeof(textdesc[0]);i++) {
+  for (i=0;i<NUM_LANG;i++) {
     if (!strcmp(textdesc[i].name,DEFAULT_LANGUAGE)) return i;
   }
   return 0;

@@ -1,4 +1,29 @@
 
+Changes in 3.3:
+ - Environment variable LANG is respected
+ - Games won/lost are counted
+ - IRC mode improved
+ - Configurable keyboard control
+ - Improved computer players
+
+Changes in 3.2:
+ - Keyboard controllable interface
+ - Better color allocation on non-True-Color displays
+ - German cards with brown acorns
+ - Original Skat is shown after game
+ - Replay is still possible after viewing the log
+ - Improved computer players
+
+Changes in 3.1:
+ - German cards and nicer images
+ - New official rules:
+ -  Lost Hand games count double
+ -  Grand Ouvert multiplier is 24
+ - Telnet bug patch or workaround (see README.IRC)
+ - Language and card suit interactively changeable
+ - Shortcut configurable
+ - Improved computer players
+
 Changes in 3.0:
  - Playing via Internet Relay Chat supported
  - Computer can suggest a card to play

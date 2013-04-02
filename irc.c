@@ -1,10 +1,21 @@
 
 /*
     xskat - a card game for 1 to 3 players.
-    Copyright (C) 1998  Gunter Gerhardt
+    Copyright (C) 2000  Gunter Gerhardt
 
     This program is free software; you can redistribute it freely.
     Use it at your own risk; there is NO WARRANTY.
+
+    Redistribution of modified versions is permitted
+    provided that the following conditions are met:
+    1. All copyright & permission notices are preserved.
+    2.a) Only changes required for packaging or porting are made.
+      or
+    2.b) It is clearly stated who last changed the program.
+         The program is renamed or
+         the version number is of the form x.y.z,
+         where x.y is the version of the original program
+         and z is an arbitrary suffix.
 */
 
 #define IRC_C
@@ -32,7 +43,7 @@ int in;
 
   if (!irc_logfile) return;
   if (!ini) {
-    f=strcmp(irc_logfile,"-")?fopen(irc_logfile,"w"):stdout;
+    f=strcmp(irc_logfile,"-")?fopen(irc_logfile,irc_logappend?"a":"w"):stdout;
     if (!f) {
       fprintf(stderr,"Can't write file %s\n",irc_logfile);
       irc_logfile=0;
@@ -68,6 +79,7 @@ char *s;
       while (fputc(c,stderr)==EOF);
     }
   }
+  fflush(stderr);
 }
 
 VOID irc_printnl(s)
@@ -75,7 +87,6 @@ char *s;
 {
   irc_print(s);
   irc_print("\n");
-  fflush(stdout);
 }
 
 char *irc_getline()
@@ -85,8 +96,8 @@ char *irc_getline()
   static ssize_t cnt;
   char *ptr;
 
+  ptr=buf;
   if (rst) {
-    ptr=buf;
     while (cnt--) *ptr++=buf[++siz];
     cnt=siz=ptr-buf;
     rst=0;
@@ -103,8 +114,10 @@ char *irc_getline()
       cnt--;
       *ptr=0;
       rst=1;
-      irc_log(buf,1);
-      irc_log("\n",1);
+      if (*buf!=':' || !(ptr=strchr(buf,' ')) || strncmp(ptr+1,"322",3)) {
+	irc_log(buf,1);
+	irc_log("\n",1);
+      }
       return buf;
     }
     if (siz==sizeof(buf)) {
@@ -114,39 +127,48 @@ char *irc_getline()
   return 0;
 }
 
-VOID irc_xinput(s,l)
+int irc_xinput(s,l)
 char *s;
 int l;
 {
-  static char buf[1024];
-  static int len;
-
   s[l]=0;
   switch (s[0]) {
   case '\r':
+    if (!irc_inplen) return 0;
     s[0]='\n';
     break;
   case '\b':case 127:
-    strcpy(s,"\b \b");
+    if (irc_inplen) {
+      strcpy(s,"\b \b");
+    }
+    else {
+      s[0]=l=0;
+    }
     break;
+  case ' ':
+  case '\t':
+    if (!irc_inplen) return 0;
+    break;
+  case 0x1B:
+    return 0;
   }
   irc_print(s);
-  fflush(stdout);
   if (s[0]=='\n') {
-    buf[len]=0;
-    irc_talk(buf);
-    len=0;
+    irc_inpbuf[irc_inplen]=0;
+    irc_talk(irc_inpbuf);
+    irc_inplen=0;
   }
   else if (s[0]=='\b') {
-    if (len) len--;
+    irc_inplen--;
   }
-  else if (len+l<sizeof(buf)){
-    strcpy(buf+len,s);
-    len+=l;
+  else if (irc_inplen+l<sizeof(irc_inpbuf)){
+    strcpy(irc_inpbuf+irc_inplen,s);
+    irc_inplen+=l;
   }
   else {
-    len=0;
+    irc_inplen=0;
   }
+  return 1;
 }
 
 int irc_match(cmd,s)
@@ -201,122 +223,131 @@ int d;
 VOID irc_pr_ramsch(val)
 int val;
 {
-  irc_pr_ss(textarr[TX_RAMSCH_SPIELEN],
-	    textarr[val==2?TX_IMMER:TX_NEIN-val]);
+  irc_pr_ss(textarr[TX_RAMSCH_SPIELEN].t[lang[0]],
+	    textarr[val==2?TX_IMMER:TX_NEIN-val].t[lang[0]]);
 }
 
 VOID irc_pr_sramsch(val)
 int val;
 {
-  irc_pr_ss(textarr[TX_SCHIEBERAMSCH],
-	    textarr[TX_NEIN-val]);
+  irc_pr_ss(textarr[TX_SCHIEBERAMSCH].t[lang[0]],
+	    textarr[TX_NEIN-val].t[lang[0]]);
 }
 
 VOID irc_pr_kontra(val)
 int val;
 {
-  irc_pr_ss(textarr[TX_KONTRA_SAGEN],
-	    textarr[val==2?TX_AB18:TX_NEIN-val]);
+  irc_pr_ss(textarr[TX_KONTRA_SAGEN].t[lang[0]],
+	    textarr[val==2?TX_AB18:TX_NEIN-val].t[lang[0]]);
 }
 
 VOID irc_pr_bock(val)
 int val;
 {
-  irc_pr_ss(textarr[TX_BOCK_RUNDEN],
-	    textarr[val==2?TX_UND_RAMSCH:TX_NEIN-val]);
+  irc_pr_ss(textarr[TX_BOCK_RUNDEN].t[lang[0]],
+	    textarr[val==2?TX_UND_RAMSCH:TX_NEIN-val].t[lang[0]]);
 }
 
 VOID irc_pr_resumebock(val)
 int val;
 {
-  irc_pr_ss(textarr[TX_FORTSETZEN],
-	    textarr[TX_NEIN-val]);
+  irc_pr_ss(textarr[TX_FORTSETZEN].t[lang[0]],
+	    textarr[TX_NEIN-val].t[lang[0]]);
 }
 
 VOID irc_pr_spitze(val)
 int val;
 {
-  irc_pr_ss(textarr[TX_SPITZE],
-	    textarr[val==2?TX_PLUS2:TX_NEIN-val]);
+  irc_pr_ss(textarr[TX_SPITZE].t[lang[0]],
+	    textarr[val==2?TX_PLUS2:TX_NEIN-val].t[lang[0]]);
 }
 
 VOID irc_pr_revolution(val)
 int val;
 {
-  irc_pr_ss(textarr[TX_REVOLUTION],
-	    textarr[TX_NEIN-val]);
+  irc_pr_ss(textarr[TX_REVOLUTION].t[lang[0]],
+	    textarr[TX_NEIN-val].t[lang[0]]);
 }
 
 VOID irc_pr_klopfen(val)
 int val;
 {
-  irc_pr_ss(textarr[TX_KLOPFEN],
-	    textarr[TX_NEIN-val]);
+  irc_pr_ss(textarr[TX_KLOPFEN].t[lang[0]],
+	    textarr[TX_NEIN-val].t[lang[0]]);
 }
 
 VOID irc_pr_schenken(val)
 int val;
 {
-  irc_pr_ss(textarr[TX_SCHENKEN],
-	    textarr[TX_NEIN-val]);
+  irc_pr_ss(textarr[TX_SCHENKEN].t[lang[0]],
+	    textarr[TX_NEIN-val].t[lang[0]]);
+}
+
+VOID irc_pr_oldrules(val)
+int val;
+{
+  irc_pr_ss(textarr[TX_ALTE_REGELN].t[lang[0]],
+	    textarr[TX_NEIN-val].t[lang[0]]);
 }
 
 VOID irc_pr_bockevents(val)
 int val;
 {
-  irc_print(textarr[TX_BOCK_EREIGNISSE_T]+1);
+  irc_print(textarr[TX_BOCK_EREIGNISSE_T].t[lang[0]]+1);
   irc_printnl(":");
   if (val&BOCK_BEI_60) {
-    irc_pr_bs(textarr[TX_VERLOREN_MIT_60]);
+    irc_pr_bs(textarr[TX_VERLOREN_MIT_60].t[lang[0]]);
   }
   if (val&BOCK_BEI_GRANDHAND) {
-    irc_pr_bs(textarr[TX_GRAND_HAND_GEWONNEN]);
+    irc_pr_bs(textarr[TX_GRAND_HAND_GEWONNEN].t[lang[0]]);
   }
   if (val&BOCK_BEI_KONTRA) {
-    irc_pr_bs(textarr[TX_ERFOLGREICHER_KONTRA]);
+    irc_pr_bs(textarr[TX_ERFOLGREICHER_KONTRA].t[lang[0]]);
   }
   if (val&BOCK_BEI_RE) {
-    irc_pr_bs(textarr[TX_KONTRA_RE_ANGESAGT]);
+    irc_pr_bs(textarr[TX_KONTRA_RE_ANGESAGT].t[lang[0]]);
   }
   if (val&BOCK_BEI_NNN) {
-    irc_pr_bs(textarr[TX_NNN_IN_SPIELLISTE]);
+    irc_pr_bs(textarr[TX_NNN_IN_SPIELLISTE].t[lang[0]]);
   }
   if (val&BOCK_BEI_N00) {
-    irc_pr_bs(textarr[TX_N00_IN_SPIELLISTE]);
+    irc_pr_bs(textarr[TX_N00_IN_SPIELLISTE].t[lang[0]]);
   }
   if (val&BOCK_BEI_72) {
-    irc_pr_bs(textarr[TX_SPIELWERT_72]);
+    irc_pr_bs(textarr[TX_SPIELWERT_72].t[lang[0]]);
   }
   if (val&BOCK_BEI_96) {
-    irc_pr_bs(textarr[TX_SPIELWERT_96]);
+    irc_pr_bs(textarr[TX_SPIELWERT_96].t[lang[0]]);
   }
 }
 
 VOID irc_pr_alist(val)
 int val;
 {
-  irc_pr_ss(textarr[TX_SPIELLISTE],
-	    textarr[val==2?TX_TURNIER:val?TX_ALTERNATIV:TX_NORMAL]);
+  irc_pr_ss(textarr[TX_SPIELLISTE].t[lang[0]],
+	    textarr[val==2?TX_TURNIER:val?TX_ALTERNATIV:TX_NORMAL].t[lang[0]]);
 }
 
 VOID irc_pr_start(val)
 int val;
 {
-  irc_pr_sd(textarr[TX_GEBER],right(val)?right(val):3);
+  irc_pr_sd(textarr[TX_GEBER].t[lang[0]],right(val)?right(val):3);
 }
 
 VOID irc_pr_s1(val)
 int val;
 {
-  irc_pr_sd(textarr[TX_STRATEGIE],val);
+  irc_pr_sd(textarr[TX_STRATEGIE].t[lang[0]],val);
 }
 
 VOID irc_showrules(aplayramsch,aplaysramsch,aplaykontra,aplaybock,
 		   aresumebock,aspitzezaehlt,arevolution,aklopfen,
-		   aschenken,abockevents,ageber,aalist,astrateg)
+		   aschenken,abockevents,ageber,aalist,astrateg,
+		   aoldrules)
 int aplayramsch,aplaysramsch,aplaykontra,aplaybock;
 int aresumebock,aspitzezaehlt,arevolution,aklopfen;
 int aschenken,abockevents,ageber,aalist,astrateg;
+int aoldrules;
 {
   int f=1;
 
@@ -351,8 +382,12 @@ int aschenken,abockevents,ageber,aalist,astrateg;
     f=0;
     irc_pr_schenken(aschenken);
   }
+  if (aoldrules) {
+    f=0;
+    irc_pr_oldrules(aoldrules);
+  }
   if (f) {
-    irc_printnl(textarr[TX_OFFIZIELLE_REGELN]);
+    irc_printnl(textarr[TX_OFFIZIELLE_REGELN].t[lang[0]]);
   }
   irc_pr_alist(aalist);
   irc_pr_start(ageber);
@@ -363,11 +398,11 @@ VOID irc_sendrules()
 {
   char buf[1024];
 
-  sprintf(buf,"notice %s :/rules %d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
+  sprintf(buf,"notice %s :/rules %d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
 	  irc_channel,
 	  playramsch,playsramsch,playkontra,playbock,
 	  resumebock,spitzezaehlt,revolution,klopfen,
-	  schenken,bockevents,geber,alist[0],strateg[0]);
+	  schenken,bockevents,geber,alist[0],strateg[0],oldrules);
   irc_out(buf);
 }
 
@@ -430,7 +465,7 @@ char *msg;
   static int ini,len;
   static char buf[1024],channel[1024],nick[IRC_NICK_LEN+1];
   int i,c;
-  char *p;
+  char *p,plb[80];
 
   irc_checksync();
   irc_checkhist();
@@ -504,7 +539,7 @@ char *msg;
 	    irc_pos=atoi(p);
 	    irc_pos--;
 	    if (irc_pos<0 || irc_pos>2) irc_pos=-1;
-	    irc_pr_sd(textarr[TX_POSITION],irc_pos+1);
+	    irc_pr_sd(textarr[TX_POSITION].t[lang[0]],irc_pos+1);
 	  }
 	}
 	else if (irc_match("/ramsch ",&p)) {
@@ -569,6 +604,12 @@ char *msg;
 	    irc_pr_schenken(schenken);
 	  }
 	}
+	else if (irc_match("/oldrules ",&p)) {
+	  if (irc_state==IRC_TALK) {
+	    oldrules=istrue(p);
+	    irc_pr_oldrules(oldrules);
+	  }
+	}
 	else if (irc_match("/bockevents ",&p)) {
 	  if (irc_state==IRC_TALK) {
 	    bockevents=atoi(p);
@@ -606,32 +647,34 @@ char *msg;
 	else if (irc_match("/default",&p)) {
 	  if (irc_state==IRC_TALK) {
 	    playramsch=playsramsch=playkontra=playbock=resumebock=0;
-	    spitzezaehlt=revolution=klopfen=schenken=bockevents=0;
-	    irc_printnl(textarr[TX_OFFIZIELLE_REGELN]);
+	    spitzezaehlt=revolution=klopfen=schenken=bockevents=oldrules=0;
+	    irc_printnl(textarr[TX_OFFIZIELLE_REGELN].t[lang[0]]);
 	  }
 	}
 	else if (irc_match("/rules",&p)) {
 	  if (irc_state==IRC_TALK) {
 	    irc_showrules(playramsch,playsramsch,playkontra,playbock,
 			  resumebock,spitzezaehlt,revolution,klopfen,
-			  schenken,bockevents,geber,alist[0],strateg[0]);
+			  schenken,bockevents,geber,alist[0],strateg[0],
+			  oldrules);
 	    irc_sendrules();
 	  }
 	}
 	else if (irc_match("/go",&p)) {
 	  if (irc_state==IRC_TALK || irc_state==IRC_SERVER) {
 	    if (!strcmp(irc_channel,"#xskat")) {
-	      irc_printnl(textarr[TX_NICHT_HIER]);
+	      irc_printnl(textarr[TX_NICHT_HIER].t[lang[0]]);
 	    }
 	    else {
-	      irc_server=1;
 	      irc_clients=0;
 	      irc_2player=*p=='2';
 	      irc_out("notice ");
 	      irc_out(irc_channel);
 	      irc_out(" :/server ");
-	      irc_out(textarr[TX_IRC_VERSION]);
+	      irc_out(textarr[TX_XSKAT].t[lang[0]]);
 	      irc_out("\n");
+	      sprintf(plb,textarr[TX_WARTEN_AUF_SPIELER_N].t[lang[0]],2);
+	      irc_printnl(plb);
 	      irc_state=IRC_SERVER;
 	    }
 	  }
@@ -641,19 +684,28 @@ char *msg;
 	  irc_out("\n");
 	}
 	else if (irc_match("/help",&p)) {
-	  for (i=TX_IRC_HELP01;i<=TX_IRC_HELP15;i++) {
-	    irc_printnl(textarr[i]);
+	  for (i=TX_IRC_HELP01;i<=TX_IRC_HELPXX;i++) {
+	    irc_printnl(textarr[i].t[lang[0]]);
 	  }
 	}
+	else if (irc_match("/quit",&p)) {
+	  exitus(1);
+	}
 	else if (*p=='/') {
-	  irc_printnl(textarr[TX_UNBEKANNTES_KOMMANDO]);
+	  irc_printnl(textarr[TX_UNBEKANNTES_KOMMANDO].t[lang[0]]);
 	}
 	else {
-	  irc_out("privmsg ");
-	  irc_out(irc_channel);
-	  irc_out(" :");
-	  irc_out(p);
-	  irc_out("\n");
+	  if (!strcmp(p,"go") || !strcmp(p,"go2")) {
+	    sprintf(plb,textarr[TX_SOLLTE_DAS_GO_X_SEIN].t[lang[0]],p+2);
+	    irc_printnl(plb);
+	  }
+	  else {
+	    irc_out("privmsg ");
+	    irc_out(irc_channel);
+	    irc_out(" :");
+	    irc_out(p);
+	    irc_out("\n");
+	  }
 	}
 	len=0;
       }
@@ -848,31 +900,41 @@ char *q;
   int aplayramsch,aplaysramsch,aplaykontra,aplaybock;
   int aresumebock,aspitzezaehlt,arevolution,aklopfen;
   int aschenken,abockevents,ageber,aalist,astrateg;
+  int aoldrules;
 
-  sscanf(q,"%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
+  sscanf(q,"%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
 	 &aplayramsch,&aplaysramsch,&aplaykontra,&aplaybock,
 	 &aresumebock,&aspitzezaehlt,&arevolution,&aklopfen,
-	 &aschenken,&abockevents,&ageber,&aalist,&astrateg);
+	 &aschenken,&abockevents,&ageber,&aalist,&astrateg,
+	 &aoldrules);
   irc_showrules(aplayramsch,aplaysramsch,aplaykontra,aplaybock,
 		aresumebock,aspitzezaehlt,arevolution,aklopfen,
-		aschenken,abockevents,ageber,aalist,astrateg);
+		aschenken,abockevents,ageber,aalist,astrateg,
+		aoldrules);
 }
 
 VOID irc_getserverconf(q)
 char *q;
 {
-  static int i;
+  static int i,f;
+  char plb[80];
+  int ln;
 
   if (irc_match("1 ",&q)) {
     q=irc_copyname(irc_conf[i].nick,q);
-    q=irc_copyname(spnames[i][0],q);
-    q=irc_copyname(spnames[i][1],q);
-    sscanf(q,"%d,%d,%d,%d,%d\n",
+    q=irc_copyname(spnames[i][0][0],q);
+    q=irc_copyname(spnames[i][1][0],q);
+    for (ln=1;ln<NUM_LANG;ln++) {
+      strcpy(spnames[i][0][ln],spnames[i][0][0]);
+      strcpy(spnames[i][1][ln],spnames[i][1][0]);
+    }
+    sscanf(q,"%d,%d,%d,%d,%d,%d\n",
 	   &sort1[i],&alternate[i],&desk[i].large,&alist[i],
-	   &nimmstich[i][0]);
+	   &nimmstich[i][0],&abkuerz[i]);
     calc_desk(i);
     if (!strcmp(irc_conf[i].nick,irc_nick)) {
       irc_pos=i;
+      f=1;
     }
     else if (nimmstich[i][0]<101) {
       nimmstich[i][0]=0;
@@ -880,20 +942,27 @@ char *q;
     numsp=++i;
     irc_2player=numsp==2;
   }
-  else if (irc_match("2 ",&q)) {
-    sscanf(q,"%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%ld,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
+  else if (f && irc_match("2 ",&q)) {
+    sscanf(q,"%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%ld,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
 	   &playramsch,&playsramsch,&playkontra,&playbock,&resumebock,
 	   &spitzezaehlt,&revolution,&klopfen,&schenken,
-	   &bockevents,&geber,&alist[0],&strateg[0],
+	   &bockevents,&geber,&alist[0],&strateg[0],&oldrules,
 	   &savseed,&bockspiele,&bockinc,&ramschspiele,
 	   &sum[0][0],&sum[0][1],&sum[0][2],
 	   &sum[1][0],&sum[1][1],&sum[1][2],
-	   &sum[2][0],&sum[2][1],&sum[2][2]);
+	   &sum[2][0],&sum[2][1],&sum[2][2],
+	   &cgewoverl[0][0],&cgewoverl[1][0],&cgewoverl[2][0],
+	   &cgewoverl[0][1],&cgewoverl[1][1],&cgewoverl[2][1]);
     savseed-=11;
     setrnd(&seed[0],savseed);
     setsum(0);
+    if (!irc_2player) {
+      sprintf(plb,textarr[TX_VERBUNDEN_MIT_SPIELER_N].t[lang[0]],3);
+      irc_printnl(plb);
+    }
     irc_state=IRC_PLAYING;
   }
+  else i=0;
 }
 
 VOID irc_putserverconf()
@@ -902,22 +971,24 @@ VOID irc_putserverconf()
   int i;
 
   for (i=0;i<2+!irc_2player;i++) {
-    sprintf(buf,"notice %s :/svconf1 %s~%s~%s~%d,%d,%d,%d,%d\n",
+    sprintf(buf,"notice %s :/svconf1 %s~%s~%s~%d,%d,%d,%d,%d,%d\n",
 	    irc_channel,
-	    irc_conf[i].nick,spnames[i][0],spnames[i][1],
+	    irc_conf[i].nick,spnames[i][0][0],spnames[i][1][0],
 	    irc_conf[i].sort1,irc_conf[i].alternate,irc_conf[i].large,
-	    alist[0],irc_conf[i].nimmstich);
+	    alist[0],irc_conf[i].nimmstich,irc_conf[i].abkuerz);
     irc_out(buf);
   }
-  sprintf(buf,"notice %s :/svconf2 %d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%ld,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
+  sprintf(buf,"notice %s :/svconf2 %d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%ld,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
 	  irc_channel,
 	  playramsch,playsramsch,playkontra,playbock,resumebock,
 	  spitzezaehlt,revolution,klopfen,schenken,
-	  bockevents,geber,alist[0],strateg[0],
+	  bockevents,geber,alist[0],strateg[0],oldrules,
 	  savseed+11,bockspiele,bockinc,ramschspiele,
 	  sum[0][0],sum[0][1],sum[0][2],
 	  sum[1][0],sum[1][1],sum[1][2],
-	  sum[2][0],sum[2][1],sum[2][2]);
+	  sum[2][0],sum[2][1],sum[2][2],
+	  cgewoverl[0][0],cgewoverl[1][0],cgewoverl[2][0],
+	  cgewoverl[0][1],cgewoverl[1][1],cgewoverl[2][1]);
   irc_out(buf);
   irc_state=IRC_PLAYING;
 }
@@ -926,11 +997,11 @@ VOID irc_putclientconf()
 {
   char buf[1024];
 
-  sprintf(buf,"notice %s :/clconf %s~%s~%d,%d,%d,%d,%d\n",
+  sprintf(buf,"notice %s :/clconf %s~%s~%d,%d,%d,%d,%d,%d\n",
 	  irc_channel,
-	  spnames[0][0],spnames[0][1],
+	  spnames[0][0][0],spnames[0][1][0],
 	  sort1[0],alternate[0],desk[0].large,
-	  nimmstich[0][0],irc_pos);
+	  nimmstich[0][0],irc_pos,abkuerz[0]);
   irc_out(buf);
 }
 
@@ -969,17 +1040,24 @@ VOID irc_setpos()
 VOID irc_getclientconf(s,q)
 char *s,*q;
 {
-  int i;
+  int i,ln;
+  char plb[80];
 
   i=irc_clients;
   strcpy(irc_conf[i].nick,s);
   q=irc_copyname(irc_conf[i].spnames[0],q);
   q=irc_copyname(irc_conf[i].spnames[1],q);
-  sscanf(q,"%d,%d,%d,%d,%d\n",
+  sscanf(q,"%d,%d,%d,%d,%d,%d\n",
 	 &irc_conf[i].sort1,&irc_conf[i].alternate,
 	 &irc_conf[i].large,&irc_conf[i].nimmstich,
-	 &irc_conf[i].pos);
+	 &irc_conf[i].pos,&irc_conf[i].abkuerz);
   irc_clients=++i;
+  sprintf(plb,textarr[TX_VERBUNDEN_MIT_SPIELER_N].t[lang[0]],i+1);
+  irc_printnl(plb);
+  if (!irc_2player && i<2) {
+    sprintf(plb,textarr[TX_WARTEN_AUF_SPIELER_N].t[lang[0]],i+2);
+    irc_printnl(plb);
+  }
   if (i==1+!irc_2player) {
     numsp=i+1;
     irc_conf[i].pos=irc_pos;
@@ -995,8 +1073,9 @@ char *s,*q;
     irc_conf[i].alternate=alternate[0];
     irc_conf[i].large=desk[0].large;
     irc_conf[i].nimmstich=nimmstich[0][0];
-    strcpy(irc_conf[i].spnames[0],spnames[0][0]);
-    strcpy(irc_conf[i].spnames[1],spnames[0][1]);
+    irc_conf[i].abkuerz=abkuerz[0];
+    strcpy(irc_conf[i].spnames[0],spnames[0][0][0]);
+    strcpy(irc_conf[i].spnames[1],spnames[0][1][0]);
     for (i=0;i<numsp;i++) {
       sort1[i]=irc_conf[i].sort1;
       alternate[i]=irc_conf[i].alternate;
@@ -1004,8 +1083,11 @@ char *s,*q;
       alist[i]=alist[0];
       nimmstich[i][0]=i!=irc_pos && irc_conf[i].nimmstich<101
 	?0:irc_conf[i].nimmstich;
-      strcpy(spnames[i][0],irc_conf[i].spnames[0]);
-      strcpy(spnames[i][1],irc_conf[i].spnames[1]);
+      abkuerz[i]=irc_conf[i].abkuerz;
+      for (ln=0;ln<NUM_LANG;ln++) {
+	strcpy(spnames[i][0][ln],irc_conf[i].spnames[0]);
+	strcpy(spnames[i][1][ln],irc_conf[i].spnames[1]);
+      }
       calc_desk(i);
     }
     irc_putserverconf();
@@ -1057,30 +1139,32 @@ char *oldnick,*newnick;
   }
 }
 
-VOID irc_msg(sn,nick,q)
-int sn;
+VOID irc_msg(nick,q)
 char *nick,*q;
 {
+  int i,sn;
   char nam[20];
 
   irc_alarm();
-  if (irc_state==IRC_PLAYING && (sn=irc_senderok(nick)) &&
-      !strncmp(nick,"xskat",5)) {
-    prspnam(nam,sn-1);
-    irc_print("<");
-    irc_print(nick);
-    irc_print("/");
-    irc_print(nam);
-    irc_print("> ");
-    irc_printnl(q);
-  }
-  else {
-    if (*nick) {
-      irc_print("<");
-      irc_print(nick);
-      irc_print("> ");
+  if (irc_inplen) {
+    for (i=0;i<irc_inplen;i++) {
+      irc_print("\b \b");
     }
-    irc_printnl(q);
+  }
+  irc_print("<");
+  irc_print(nick);
+  if (irc_state==IRC_PLAYING && (sn=irc_senderok(nick))) {
+    prspnam(nam,sn-1,lang[sn-1]);
+    if (strcmp(nick,nam)) {
+      irc_print("/");
+      irc_print(nam);
+    }
+  }
+  irc_print("> ");
+  irc_printnl(q);
+  if (irc_inplen) {
+    irc_inpbuf[irc_inplen]=0;
+    irc_print(irc_inpbuf);
   }
 }
 
@@ -1088,6 +1172,7 @@ VOID irc_parse(s)
 char *s;
 {
   char *p,*q,nick[IRC_NICK_LEN+1];
+  char plb[80];
   int i,sn,nickerr,colon;
   static int ini;
   static char mynick[IRC_NICK_LEN+1];
@@ -1108,24 +1193,39 @@ char *s;
 	  (q=strchr(q+1,':'))) q++;
       if (q && irc_match("NOTICE",&p)) {
 	if (irc_match("/server ",&q)) {
-	  if (irc_state==IRC_TALK) {
+	  if (irc_state==IRC_SERVER) {
+	    irc_printnl(textarr[TX_NUR_EINER_SOLLTE_GO_SAGEN].t[lang[0]]);
+	    irc_out("notice ");
+	    irc_out(irc_channel);
+	    irc_out(" :/noserver\n");
+	    irc_state=IRC_TALK;
+	  }
+	  else if (irc_state==IRC_TALK) {
 	    irc_out("notice ");
 	    irc_out(irc_channel);
 	    irc_out(" :/client ");
-	    irc_out(textarr[TX_IRC_VERSION]);
+	    irc_out(textarr[TX_XSKAT].t[lang[0]]);
 	    irc_out("\n");
-	    if (!irc_match(textarr[TX_IRC_VERSION],&q)) {
-	      irc_pr_ss(textarr[TX_VERSCHIEDENE_VERSIONEN],q);
+	    if (!irc_match(textarr[TX_XSKAT].t[lang[0]],&q)) {
+	      irc_pr_ss(textarr[TX_VERSCHIEDENE_VERSIONEN].t[lang[0]],q);
 	    }
 	    else {
+	      sprintf(plb,textarr[TX_VERBUNDEN_MIT_SPIELER_N].t[lang[0]],2);
+	      irc_printnl(plb);
 	      irc_putclientconf();
 	    }
 	  }
 	}
+	else if (irc_match("/noserver",&q)) {
+	  if (irc_state==IRC_SERVER) {
+	    irc_printnl(textarr[TX_NUR_EINER_SOLLTE_GO_SAGEN].t[lang[0]]);
+	    irc_state=IRC_TALK;
+	  }
+	}
 	else if (irc_match("/client ",&q)) {
 	  if (irc_state==IRC_SERVER) {
-	    if (!irc_match(textarr[TX_IRC_VERSION],&q)) {
-	      irc_pr_ss(textarr[TX_VERSCHIEDENE_VERSIONEN],q);
+	    if (!irc_match(textarr[TX_XSKAT].t[lang[0]],&q)) {
+	      irc_pr_ss(textarr[TX_VERSCHIEDENE_VERSIONEN].t[lang[0]],q);
 	      irc_state=IRC_TALK;
 	    }
 	  }
@@ -1163,11 +1263,11 @@ char *s;
 	  }
 	}
 	else {
-	  irc_msg(sn,nick,q);
+	  irc_msg(nick,q);
 	}
       }
       else if (q && irc_match("PRIVMSG",&p)) {
-	irc_msg(sn,nick,q);
+	irc_msg(nick,q);
       }
       else if (irc_match("JOIN",&p)) {
 	if (!strncmp(irc_nick,nick,9) && !ini) {
@@ -1176,8 +1276,8 @@ char *s;
 	  irc_out("mode ");
 	  irc_out(irc_nick);
 	  irc_out(" +i\n");
-	  for (i=TX_IRC_INTRO1;i<=TX_IRC_INTRO4;i++) {
-	    irc_printnl(textarr[i]);
+	  for (i=TX_IRC_INTRO1;i<=TX_IRC_INTROX;i++) {
+	    irc_printnl(textarr[i].t[lang[0]]);
 	  }
 	  ini=1;
 	}
@@ -1209,6 +1309,8 @@ char *s;
 	  p++;
 	  if (*p==':') p++;
 	  irc_printnl(p);
+	  irc_log(s-1,1);
+	  irc_log("\n",1);
 	}
       }
       else if (*p>='0' && *p<='9') {
@@ -1256,7 +1358,9 @@ VOID irc_connect()
   int pipe2fd[2];
   char buf[20];
 
+#ifdef SIGTSTP
   signal(SIGTSTP,SIG_IGN);
+#endif
   pipe(pipe1fd);
   pipe(pipe2fd);
   if (fcntl(pipe1fd[0],F_SETFL,
@@ -1298,8 +1402,10 @@ VOID irc_init()
   xinitplayers();
   irc_connect();
   irc_checknick();
-  irc_print("XSkat IRC ");
-  irc_printnl(textarr[TX_IRC_VERSION]);
+  irc_print("*** ");
+  irc_print(textarr[TX_XSKAT].t[lang[0]]);
+  irc_printnl(" ***");
+  irc_printnl(textarr[TX_README_IRC].t[lang[0]]);
   irc_print("Login ");
   irc_print(irc_user);
   irc_print(",");

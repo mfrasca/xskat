@@ -1,10 +1,22 @@
 
 /*
     xskat - a card game for 1 to 3 players.
-    Copyright (C) 1998  Gunter Gerhardt
+    Copyright (C) 2000  Gunter Gerhardt
 
     This program is free software; you can redistribute it freely.
     Use it at your own risk; there is NO WARRANTY.
+
+    Redistribution of modified versions is permitted
+    provided that the following conditions are met:
+    1. All copyright & permission notices are preserved.
+    2.a) Only changes required for packaging or porting are made.
+      or
+    2.b) It is clearly stated who last changed the program.
+         The program is renamed or
+         the version number is of the form x.y.z,
+         where x.y is the version of the original program
+         and z is an arbitrary suffix.
+
 */
 
 #define SKAT_C
@@ -101,7 +113,7 @@ int get_game()
   static int opened;
   static FILE *f;
   char s[100],*p;
-  int n,cpos[4],cmax[4],state,rep;
+  int i,n,cpos[4],cmax[4],state,rep;
   long num;
 
   if (predef==1) predef=0;
@@ -120,7 +132,7 @@ int get_game()
     }
     opened=1;
   }
-  state=rep=0;
+  state=rep=n=0;
   while (state!=4) {
     if (fscanf(f," %99s",s)!=1) {
       if (!state) break;
@@ -158,7 +170,6 @@ int get_game()
       }
       switch (state) {
       case 0:
-	n=0;
 	cpos[0]=30;cmax[0]=2;
 	cpos[1]=sager*10;cmax[1]=10;
 	cpos[2]=geber*10;cmax[2]=10;
@@ -186,7 +197,7 @@ int get_game()
       case 3:
 	gamenr=num;
 	while (num-->0) {
-	  for (n=0;n<32;n++) rndval(&seed[0],0);
+	  for (i=0;i<32;i++) rndval(&seed[0],0);
 	}
 	if (fscanf(f," %99s",s)==1) {
 	  if (toupper(*s)=='L') rotateby=-1;
@@ -244,6 +255,7 @@ VOID mischen()
   for (i=0;i<3;i++) {
     for (j=0;j<5;j++) hatnfb[i][j]=0;
   }
+  gstsum=0;
 }
 
 int lower(c1,c2,n)
@@ -381,19 +393,20 @@ int s;
   }
   if ((bb+t[tr]==4 &&
        (
-        (as==2 && ze>=2 && dk+10*ze>=24) ||
+        (as==2 && ze>=2) ||
         (as>=3 && as+ze>=4)
 	)) ||
       (bb+t[tr]==5 &&
        (
-        (ze>=2 && dk+10*ze>=27 && (b[3] || b[2])) ||
-        (as>=1 && ze>=1 && dk+10*ze>=14 && (b[3] || b[2])) ||
+        (ze>=2 && dk+10*ze>=25 && (b[3] || b[2])) ||
+        (as>=1 && ze>=1 && dk+10*ze>=11 && (b[3] || b[2])) ||
         (as>=2 && dk+10*ze>=6) ||
         (as>=3)
 	)) ||
       (bb+t[tr]==6 &&
        (
-        (dk+10*ze+11*as>=11)
+        (dk+10*ze>=18) ||
+        (10*ze+11*as>=11)
 	)) ||
       bb+t[tr]>=7
       ) {
@@ -408,14 +421,16 @@ int s;
       ((b[3] && b[2] && as>=2) ||
        (bb+t[tr]==4 && as>=1 && dk+10*ze+11*as>=27) ||
        (bb+t[tr]==5 && dk+10*ze+11*as>=18) ||
-       (bb+t[tr]==5 && bb==2 && 10*ze+11*as>=20) ||
-       (bb+t[tr]==6))) maxrw[s]=18;
+       (bb+t[tr]==5 && bb==2 && 10*ze+11*as>=20))) maxrw[s]=17;
+  if (!maxrw[s] && (b[3] || b[2] || bb==2) && (bb+t[tr]==6))
+    maxrw[s]=dk+10*ze>=10?18:17;
   stg=strateg[numsp==0?s:numsp==1?s-1:0];
   if (stg<0 && rnd(3)<-stg && maxrw[s] &&
       maxrw[s]!=nullw[0] && maxrw[s]!=nullw[1] && maxrw[s]!=nullw[2] &&
       maxrw[s]!=nullw[3] && maxrw[s]!=nullw[4]) {
     maxrw[s]=17;
   }
+  if (stg>=0 && playramsch) stg=4;
   if (stg>0 && rnd(3)<stg && !maxrw[s] &&
       (b[3] || b[2] || b[1])) maxrw[s]=17;
 }
@@ -452,7 +467,7 @@ VOID do_geben()
   hoerer=ausspl=left(geber);
   sager=right(geber);
   mischen();
-  setcurs();
+  setcurs(0);
   givecard(hoerer,0);
   givecard(sager,0);
   givecard(geber,0);
@@ -493,9 +508,14 @@ VOID do_sagen(s,w)
 int s,w;
 {
   char str[4];
+  tx_typ tt;
+  int ln;
 
+  for (ln=0;ln<NUM_LANG;ln++) {
+    tt.t[ln]=str;
+  }
   sprintf(str,"%d",w);
-  b_text(s,str);
+  b_text(s,&tt);
   inv_box(s,0,1);
   stdwait();
   inv_box(s,0,0);
@@ -505,7 +525,7 @@ int s,w;
 VOID do_passen(s)
 int s;
 {
-  b_text(s,textarr[TX_PASSE]);
+  b_text(s,&textarr[TX_PASSE]);
   inv_box(s,1,1);
   stdwait();
   inv_box(s,1,0);
@@ -515,11 +535,17 @@ int s;
 VOID do_akzept(s)
 int s;
 {
-  b_text(s,textarr[TX_JA]);
+  tx_typ tt;
+  int ln;
+
+  for (ln=0;ln<NUM_LANG;ln++) {
+    tt.t[ln]=" ";
+  }
+  b_text(s,&textarr[TX_JA]);
   inv_box(s,0,1);
   stdwait();
   inv_box(s,0,0);
-  b_text(s," ");
+  b_text(s,&tt);
   sagte18[s]=1;
 }
 
@@ -539,7 +565,7 @@ int sn;
 {
   if (lastmsaho[sn]==1) return;
   lastmsaho[sn]=1;
-  do_msaho(sn,textarr[TX_JA]);
+  do_msaho(sn,textarr[TX_JA].t[lang[sn]]);
 }
 
 VOID do_entsch()
@@ -666,20 +692,26 @@ VOID truempfe()
 int tr_voll(sn,f)
 int sn,f;
 {
-  int i,c,t,a,z;
+  int i,c,t,a,z,n[4],ze[4];
 
   if (trumpf==-1 || trumpf==4) return f;
   t=a=z=0;
+  n[0]=n[1]=n[2]=n[3]=0;
+  ze[0]=ze[1]=ze[2]=ze[3]=0;
   for (i=0;i<10;i++) {
     c=cards[10*sn+i];
     if ((c&7)==BUBE || c>>3==trumpf) t++;
     else if ((c&7)==AS) a++;
-    else if ((c&7)==ZEHN) z++;
+    else if ((c&7)==ZEHN) z++,ze[c>>3]=1;
+    else n[c>>3]++;
   }
   if (f) {
     return t>7 || (t>6 && a+z);
   }
-  return t>5 || (t>4 && a+z) || (t>3 && a>2);
+  return (t>5 || (t>4 && a+z) || (t>3 && a>2)) &&
+    !(t==4 &&
+      ((ze[0] && !n[0]) || (ze[1] && !n[1]) ||
+       (ze[2] && !n[2]) || (ze[3] && !n[3])));
 }
 
 int sage_kontra(sn)
@@ -697,8 +729,26 @@ int sn;
 int testgrand(bb,b,vh)
 int bb,b[4],vh;
 {
-  int i,j,fl,ih,g3,g4;
+  int i,j,fl,ih,g3,g4,as,ze,ko,a[4],bz;
 
+  bz=2;
+  for (j=0;j<4;j++) {
+    a[j]=0;
+    for (i=0;i<8;i++) {
+      if (i>=BUBE || i==ZEHN) continue;
+      a[j]+=inhand[j][i];
+    }
+    if (inhand[j][ZEHN] && !a[j]) bz=1;
+  }
+  if (bb==2 && spieler!=ausspl) bz=1;
+  as=inhand[0][AS]+inhand[1][AS]+inhand[2][AS]+inhand[3][AS];
+  ze=inhand[0][ZEHN]+inhand[1][ZEHN]+inhand[2][ZEHN]+inhand[3][ZEHN];
+  ko=inhand[0][KOENIG]+inhand[1][KOENIG]+inhand[2][KOENIG]+inhand[3][KOENIG];
+  if (bb==2 && as>2 && ze) return bz;
+  if (bb && as>2 && ze==4) return bz;
+  if (as==4 && ze>3-bb) return 2;
+  if (as==4 && ze>2-bb) return 1;
+  if (bb<=2 && (!b[3] || bb!=2 || spieler!=ausspl)) return 0;
   fl=g3=g4=0;
   for (i=0;i<4;i++) {
     ih=0;
@@ -716,9 +766,10 @@ int bb,b[4],vh;
     if (ih>4 && (inhand[i][AS] || inhand[i][ZEHN])) g3=1;
     if (ih>3 && inhand[i][AS] && inhand[i][ZEHN]) g3=1;
   }
-  return ((fl+bb>6) ||
-	  (bb==4 && g4) ||
-	  (bb==3 && (b[3] || vh) && g3));
+  if (fl+bb>5) return bz;
+  if (bb==4 && g4) return bz;
+  if ((bb==3 && (b[3] || vh) && g3)) return bz;
+  return fl+bb>4 && b[3] && !(bb+as==5 && !ze && !ko);
 }
 
 VOID calc_inhand(sn)
@@ -737,6 +788,57 @@ int sn;
   }
 }
 
+int testhand()
+{
+  int i,c,f,bb,as;
+  int b[4],t[4],p[4],o[4];
+
+  for (i=0;i<4;i++) {
+    b[i]=t[i]=p[i]=0;
+    o[i]=i;
+  }
+  bb=0;
+  for (i=0;i<4;i++) {
+    for (c=0;c<8;c++) inhand[i][c]=0;
+  }
+  for (i=0;i<10;i++) {
+    c=spcards[i];
+    if ((c&7)==BUBE) {
+      b[c>>3]=1;
+      bb++;
+    }
+    else {
+      p[c>>3]+=cardw[c&7];
+      t[c>>3]++;
+      inhand[c>>3][c&7]=1;
+    }
+  }
+  for (i=1;i<4;i++) {
+    if (inhand[i][ZEHN] && !inhand[i][AS] && !inhand[i][KOENIG]) {
+      o[i]=0;
+      o[0]=i;
+      break;
+    }
+  }
+  f=3;
+  while (f<5 && b[4-f]==b[3]) f++;
+  trumpf=0;
+  while (f*rwert[trumpf]<reizw[reizp]) trumpf++;
+  for (i=trumpf+1;i<4;i++) {
+    if (t[i]>t[trumpf] || (t[i]==t[trumpf] && p[i]<=p[trumpf])) trumpf=i;
+  }
+  if (testgrand(bb,b,spieler==ausspl)==2) {
+    trumpf=4;
+    return 1;
+  }
+  as=0;
+  for (i=0;i<4;i++) {
+    if (inhand[i][AS] && i!=trumpf) as++;
+  }
+  if (t[trumpf]+bb>7 && as) return 1;
+  return 0;
+}
+
 VOID calc_drueck()
 {
   int i,j,c,f,bb,n,sp;
@@ -752,6 +854,11 @@ VOID calc_drueck()
     if (maxrw[spieler]>=nullw[3]) ouveang=1;
     if (maxrw[spieler]==nullw[4]) revolang=1;
     gedr=2;
+    return;
+  }
+  if (testhand()) {
+    gedr=2;
+    handsp=1;
     return;
   }
   for (i=0;i<4;i++) {
@@ -800,15 +907,15 @@ VOID calc_drueck()
       }
     }
   }
-  if ((bb>2 || (b[3] && bb==2 && spieler==ausspl)) &&
-      testgrand(bb,b,spieler==ausspl)) {
+  if (testgrand(bb,b,spieler==ausspl)) {
     trumpf=4;
   }
   if (spitzezaehlt &&
       ((trumpf<4 && inhand[trumpf][SIEBEN] &&
-	(t[trumpf]+bb>=7 || (t[trumpf]+bb==6 && bb>=2))) ||
-       (trumpf==4 && b[0] &&
-	bb==3 && (spieler==ausspl || b[3]+b[2]==2)))) {
+	((t[trumpf]+bb>=7 && (bb>1 || !b[0])) ||
+	  (t[trumpf]+bb==6 && bb>=4))) ||
+       (trumpf==4 && b[0] && b[3] &&
+	bb==3 && spieler==ausspl))) {
     sp=trumpf==4?BUBE:SIEBEN|trumpf<<3;
     if (cards[30]!=sp && cards[31]!=sp) {
       spitzeang=1;
@@ -885,7 +992,7 @@ VOID update_list()
 
   if (splstp>=360) {
     for (i=0;i<12;i++) {
-      modsum(splsum,i,(int *)0,(int *)0,(int *)0,(int *)0);
+      modsum(splsum,sgewoverl,i,(int *)0,(int *)0,(int *)0,(int *)0);
     }
     for (i=12;i<splstp;i++) splist[i-12]=splist[i];
     splstp-=12;
@@ -896,7 +1003,7 @@ VOID update_list()
   splist[splstp].e=spwert;
   splist[splstp].g=spgew;
   memcpy((VOID *)prevsum,(VOID *)sum,sizeof(sum));
-  modsum(sum,splstp,(int *)0,(int *)0,(int *)0,(int *)0);
+  modsum(sum,cgewoverl,splstp,(int *)0,(int *)0,(int *)0,(int *)0);
   splstp++;
 }
 
@@ -905,7 +1012,7 @@ int sn;
 {
   handsp=1;
   trumpf=4;
-  reizp=-1;
+  reizp=0;
   spieler=sn;
   do_handspiel();
 }
@@ -915,7 +1022,7 @@ VOID set_prot()
   prot2.stichgem=stich-1;
   prot2.spieler=spieler;
   prot2.trumpf=trumpf;
-  prot2.gereizt=reizp<0?0:reizw[reizp];
+  prot2.gereizt=reizp<0 || ramschspiele?0:reizw[reizp];
   prot2.gewonn=spgew;
   prot2.augen=stsum;
   prot2.handsp=handsp;
@@ -935,7 +1042,7 @@ VOID set_prot()
 
 VOID do_handspiel()
 {
-  int i;
+  int i,sn;
 
   prot2.anspiel[0]=ausspl;
   prot2.gemacht[0]=-1;
@@ -944,8 +1051,6 @@ VOID do_handspiel()
       init_ramsch();
       return;
     }
-    clr_desk(0);
-    phase=GEBEN;
     stich=1;
     fill_st();
     trumpf=4;
@@ -958,6 +1063,12 @@ VOID do_handspiel()
     if (logging) di_proto(0,1,1);
     splres=1;
     nextgame();
+    phase=WEITER;
+    for (sn=0;sn<numsp;sn++) {
+      draw_skat(sn);
+    }
+    if (numsp==1) di_wiederweiter(0);
+    else di_weiter(1);
     return;
   }
   info_reiz();
@@ -979,6 +1090,18 @@ VOID do_handspiel()
   else do_handok();
 }
 
+VOID do_druecken()
+{
+  draw_skat(spieler);
+  put_fbox(spieler,TX_DRUECKEN);
+  drbut=spieler+1;
+  phase=DRUECKEN;
+  stsum=0;
+  gespcd[cards[30]]=0;
+  gespcd[cards[31]]=0;
+  gedr=handsp=0;
+}
+
 VOID do_handok()
 {
   if (iscomp(spieler) || handsp) {
@@ -987,11 +1110,7 @@ VOID do_handok()
     stsum=cardw[cards[30]&7]+cardw[cards[31]&7];
     save_skat(1);
   }
-  if (!iscomp(spieler) && !handsp) {
-    draw_skat();
-    put_fbox(spieler,TX_DRUECKEN);
-    phase=DRUECKEN;
-  }
+  if (!iscomp(spieler) && !handsp) do_druecken();
   else do_ansagen();
 }
 
@@ -1142,7 +1261,7 @@ VOID calc_result()
     spwert=nullw[revolang?4:(ouveang?2:0)+handsp];
     if (nullv) {
       spgew=0;
-      if (!handsp) spwert*=2;
+      if (!handsp || !oldrules) spwert*=2;
       nspwert=0;
     }
     else {
@@ -1181,7 +1300,7 @@ VOID calc_result()
   if (schwang) f++;
   if (ouveang) f++;
   if (spitzeang) f+=spitzezaehlt;
-  if (trumpf==4 && ouveang) spwert=(f-1)*36;
+  if (trumpf==4 && ouveang && oldrules) spwert=(f-1)*36;
   else spwert=f*rwert[trumpf];
   if ((stsum>60 &&
        spwert>=reizw[reizp] &&
@@ -1201,7 +1320,7 @@ VOID calc_result()
     if (spwert<reizw[reizp]) {
       spwert=((reizw[reizp]-1)/rwert[trumpf]+1)*rwert[trumpf];
     }
-    if (!handsp) spwert*=2;
+    if (!handsp || !oldrules) spwert*=2;
     nspwert=0;
   }
   for (i=0;i<kontrastufe;i++) spwert*=2;
@@ -1242,6 +1361,7 @@ VOID get_next()
   }
   else {
     if (butternok!=2) butternok=0;
+    gstsum+=cardw[stcd[0]&7]+cardw[stcd[1]&7]+cardw[stcd[2]&7];
     schwz=0;
   }
 }
@@ -1261,6 +1381,8 @@ VOID save_list()
   fprintf(f,"a %d %d %d\n",splsum[0][1],splsum[1][1],splsum[2][1]);
   fprintf(f,"t %d %d %d\n",splsum[0][2],splsum[1][2],splsum[2][2]);
   fprintf(f,"b %d %d %d\n",bockspiele,bockinc,ramschspiele);
+  fprintf(f,"g %d %d %d\n",sgewoverl[0][0],sgewoverl[1][0],sgewoverl[2][0]);
+  fprintf(f,"v %d %d %d\n",sgewoverl[0][1],sgewoverl[1][1],sgewoverl[2][1]);
   for (i=0;i<splstp;i++) {
     fprintf(f,"e %d %d %d %d %d\n",
 	    splist[i].s,splist[i].r,splist[i].d,
@@ -1278,14 +1400,22 @@ int clr;
   for (i=0;i<3;i++) {
     splfirst[i]=0;
     for (j=0;j<3;j++) {
-      if (clr) sum[i][j]=0;
+      if (clr) {
+	sum[i][j]=0;
+	if (j<2) {
+	  cgewoverl[i][j]=0;
+	}
+      }
       splsum[i][j]=sum[i][j];
+      if (j<2) {
+	sgewoverl[i][j]=cgewoverl[i][j];
+      }
     }
   }
 }
 
-VOID modsum(sm,p,as,ae,ar,ad)
-int sm[3][3],p,*as,*ae,*ar,*ad;
+VOID modsum(sm,gv,p,as,ae,ar,ad)
+int sm[3][3],gv[3][2],p,*as,*ae,*ar,*ad;
 {
   int s,e,r,d;
 
@@ -1297,6 +1427,7 @@ int sm[3][3],p,*as,*ae,*ar,*ad;
   if (e<=0 || !r || d) {
     sm[s][0]+=e;
     sm[s][2]+=e;
+    if (e) gv[s][e<0]++;
   }
   if (e<0) {
     sm[s][1]-=e;
@@ -1312,6 +1443,10 @@ int sm[3][3],p,*as,*ae,*ar,*ad;
       sm[right(s)][0]-=e;
       sm[left(s)][2]-=e;
       sm[right(s)][2]-=e;
+      if (e) {
+	gv[left(s)][1]++;
+	gv[right(s)][1]++;
+      }
     }
     sm[left(s)][1]+=e;
     sm[right(s)][1]+=e;
@@ -1458,6 +1593,43 @@ VOID read_opt()
       }
     }
   }
+  if (fscanf(f,"b %d %d %d\n",&va[0],&va[1],&va[2])==3) {
+    for (i=0;i<3;i++) {
+      if (useoptfile[i] && !blattset[i]) {
+	if (va[i]<0 || va[i]>3) va[i]=0;
+	blatt[i]=va[i];
+      }
+    }
+  }
+  if (fscanf(f,"l %d %d %d\n",&va[0],&va[1],&va[2])==3) {
+    for (i=0;i<3;i++) {
+      if (useoptfile[i] && !langset[i]) {
+	if (va[i]<0 || va[i]>=NUM_LANG) va[i]=0;
+	lang[i]=va[i];
+      }
+    }
+  }
+  if (fscanf(f,"a %d %d %d\n",&va[0],&va[1],&va[2])==3) {
+    for (i=0;i<3;i++) {
+      if (useoptfile[i] && !abkuerzset[i]) {
+	if (va[i]<0 || va[i]>2) va[i]=1;
+	abkuerz[i]=va[i];
+      }
+    }
+  }
+  if (fscanf(f,"o %d\n",&v)==1) {
+    if (!oldrulesset) {
+      oldrules=!!v;
+    }
+  }
+  if (fscanf(f,"k %d %d %d\n",&va[0],&va[1],&va[2])==3) {
+    for (i=0;i<3;i++) {
+      if (useoptfile[i] && !keyboardset[i]) {
+	if (va[i]<0 || va[i]>2) va[i]=1;
+	keyboard[i]=va[i];
+      }
+    }
+  }
   fclose(f);
 }
 
@@ -1489,6 +1661,11 @@ VOID save_opt()
   fprintf(f,"s %d\n",schenken);
   fprintf(f,"f %d\n",fastdeal);
   fprintf(f,"h %d %d %d\n",hints[0],hints[1],hints[2]);
+  fprintf(f,"b %d %d %d\n",blatt[0],blatt[1],blatt[2]);
+  fprintf(f,"l %d %d %d\n",lang[0],lang[1],lang[2]);
+  fprintf(f,"a %d %d %d\n",abkuerz[0],abkuerz[1],abkuerz[2]);
+  fprintf(f,"o %d\n",oldrules);
+  fprintf(f,"k %d %d %d\n",keyboard[0],keyboard[1],keyboard[2]);
   fclose(f);
 }
 
@@ -1516,9 +1693,20 @@ VOID read_list()
   if (fscanf(f,"b %d %d %d\n",&bockspiele,&bockinc,&ramschspiele)!=3) {
     bockspiele=bockinc=ramschspiele=0;
   }
+  if (fscanf(f,"g %d %d %d\n",
+	     &sgewoverl[0][0],&sgewoverl[1][0],&sgewoverl[2][0])!=3) {
+    sgewoverl[0][0]=sgewoverl[1][0]=sgewoverl[2][0]=0;
+  }
+  if (fscanf(f,"v %d %d %d\n",
+	     &sgewoverl[0][1],&sgewoverl[1][1],&sgewoverl[2][1])!=3) {
+    sgewoverl[0][1]=sgewoverl[1][1]=sgewoverl[2][1]=0;
+  }
   for (i=0;i<3;i++) {
     for (j=0;j<3;j++) {
       sum[i][j]=splsum[i][j];
+    }
+    for (j=0;j<2;j++) {
+      cgewoverl[i][j]=sgewoverl[i][j];
     }
   }
   do {
@@ -1528,13 +1716,13 @@ VOID read_list()
       splist[splstp].d=(i-splist[splstp].s*10000-splist[splstp].r*4000)/2000;
       splist[splstp].e=i%2000>>1;
       splist[splstp].g=i&1;
-      modsum(sum,splstp,(int *)0,(int *)0,(int *)0,(int *)0);
+      modsum(sum,cgewoverl,splstp,(int *)0,(int *)0,(int *)0,(int *)0);
       splstp++;
     }
     else if (fscanf(f,"e %d %d %d %d %d\n",
 		    &splist[splstp].s,&splist[splstp].r,&splist[splstp].d,
 		    &splist[splstp].e,&splist[splstp].g)==5) {
-      modsum(sum,splstp,(int *)0,(int *)0,(int *)0,(int *)0);
+      modsum(sum,cgewoverl,splstp,(int *)0,(int *)0,(int *)0,(int *)0);
       splstp++;
     }
     else {
@@ -1588,9 +1776,9 @@ VOID next_stich()
   if (maxnimm()<101) {
     waitt(maxnimm()*100,2);
   }
-  info_stich(0,stcd[0],0);
-  info_stich(1,stcd[1],0);
-  info_stich(2,stcd[2],0);
+  info_stich(0,stcd[0]);
+  info_stich(1,stcd[1]);
+  info_stich(2,stcd[2]);
   nimm_stich();
   vmh=0;
   stich++;
@@ -1611,7 +1799,7 @@ VOID finishgame()
   int i,s;
 
   if (stich<11) {
-    if (trumpf<0 || trumpf>4) fill_st();
+    if (trumpf<0 || trumpf>4 || (schenkstufe && stich==1)) fill_st();
     else {
       while (stich!=11) {
 	s=(ausspl+vmh)%3;
@@ -1664,11 +1852,16 @@ VOID do_next()
 VOID calc_poss(s)
 int s;
 {
-  int i,j,f1,w1,f2,w2;
+  int i,j,k,f1,w1,f2,w2;
 
   possc=0;
   for (i=0;i<10;i++) {
-    if (cards[s*10+i]>=0) possi[possc++]=s*10+i;
+    if (cards[s*10+i]>=0) {
+      for (j=0;j<possc && cards[s*10+i]>cards[possi[j]];j++);
+      for (k=possc;k>j;k--) possi[k]=possi[k-1];
+      possi[j]=s*10+i;
+      possc++;
+    }
   }
   if (vmh) {
     f1=stcd[0]>>3;
@@ -1728,7 +1921,7 @@ int f,s;
 int zweihoechste(ci)
 int ci;
 {
-  int i,tr,trdr,cj;
+  int i,tr,trdr,cj=ci;
 
   calc_high(1,1);
   if (ci!=high[trumpf]) return 0;
@@ -1754,7 +1947,8 @@ int ignorieren()
 
   mi=right(ausspl);
   fb=stcd[0]>>3;
-  if ((stcd[0]&7)==BUBE) fb=trumpf;
+  if ((stcd[0]&7)==BUBE || fb==trumpf ||
+      cardw[stcd[0]&7] || hatnfb[mi][fb]==1) return 0;
   ih=0;
   for (i=0;i<8;i++) k[i]=0;
   for (i=0;i<possc;i++) {
@@ -1763,34 +1957,39 @@ int ignorieren()
       k[cards[possi[i]]&7]=1;
     }
   }
-  if (ih==2) {
-    k[BUBE]=k[NEUN];
-    for (i=AS;i<=DAME;i++) {
-      if (k[i] && k[i+1]) return 0;
+  k[BUBE]=k[NEUN];
+  k[NEUN]=k[ACHT];
+  k[ACHT]=k[SIEBEN];
+  if (ih>=2) {
+    for (i=AS;i<=NEUN && !k[i];i++) {
+      if (gespcd[fb<<3|i]!=2) return 0;
     }
+    for (i++;i<=ACHT && !k[i];i++) {
+      if (gespcd[fb<<3|i]!=2) break;
+    }
+    if (k[i]) return 0;
   }
-  return fb!=trumpf && !cardw[stcd[0]&7] && hatnfb[mi][fb]!=1 && ih<3;
+  return ih<3;
 }
 
-int gegenbuben()
+int genugdrin()
 {
-  int s,i;
-
-  for (s=0;s<3;s++) {
-    if (s==spieler) continue;
-    for (i=0;i<10;i++) {
-      if (cards[s*10+i]>=0 && (cards[s*10+i]&7)==BUBE) return 1;
-    }
-  }
-  return 0;
+  return
+    (stcd[0]>>3==cards[possi[0]]>>3 && (cards[possi[0]]&7)!=BUBE) ||
+      (trumpf!=4 && cardw[stcd[0]&7]+cardw[stcd[1]&7]>0) ||
+	cardw[stcd[0]&7]+cardw[stcd[1]&7]>4;
 }
 
-int uebernehmen(p,h)
-int p,h;
+int uebernehmen(p,h,n)
+int p,h,n;
 {
   int i,j,ci,cj,wi,wj,fb,is;
 
   is=(ausspl+vmh)%3==spieler;
+  if (is && vmh==1 && !hatnfb[left(spieler)][trumpf] &&
+      (stcd[0]>>3==trumpf ||
+       (stcd[0]&7)==BUBE ||
+       hatnfb[left(spieler)][stcd[0]>>3])) h=0;
   j=0;
   calc_inhand((ausspl+vmh)%3);
   for (i=0;i<possc;i++) {
@@ -1815,11 +2014,6 @@ int p,h;
 		shigh[fb]>=0 &&
 		!inhand[shigh[fb]>>3][shigh[fb]&7]) continue;
 	  }
-          if (wj==11 && !gegenbuben()) continue;
-          if (wi==11 && cj>>3!=trumpf) {
-            j=i+1;
-            continue;
-          }
         }
         if (wi==10) wi=12-h*2;
         if (wj==10) wj=12-h*2;
@@ -1840,6 +2034,10 @@ int p,h;
 	if (is) {
 	  if (!h && zweihoechste(ci)) j=i+1;
 	  else {
+	    if (n) {
+	      if ((wi==4 && ci>>3!=trumpf) || wi==10) wi=-1;
+	      if ((wj==4 && cj>>3!=trumpf) || wj==10) wj=-1;
+	    }
 	    if ((h || !zweihoechste(cj)) && ((wi<wj)^h)) j=i+1;
 	  }
 	}
@@ -1853,7 +2051,11 @@ int p,h;
   if (j) {
     cj=cards[possi[j-1]];
     wj=cardw[cj&7];
-    if (!h && wj==10 && gespcd[(cj&0x18)|AS]<!is+1) j=0;
+    if (is && vmh==1 && wj>4 && !hatnfb[left(spieler)][trumpf] &&
+	(stcd[0]>>3==trumpf ||
+	 (stcd[0]&7)==BUBE ||
+	 hatnfb[left(spieler)][stcd[0]>>3])) j=0;
+    else if (!h && wj==10 && gespcd[(cj&0x18)|AS]<!is+1) j=0;
     else playcd=j-1;
   }
   return j!=0;
@@ -1865,20 +2067,33 @@ VOID schmieren()
 
   j=0;
   aw[0]=aw[1]=aw[2]=aw[3]=9;
+  calc_high(2,0);
+  if (vmh==2) {
+    for (i=0;i<4;i++) {
+      if (!(i==trumpf && high[i]!=(i<<3|AS) && possc<3) &&
+	  !hatnfb[spieler][i]) aw[i]=4;
+    }
+  }
   for (i=0;i<possc;i++) {
     ci=cards[possi[i]];
-    if ((ci&7)==ZEHN) aw[ci>>3]=11;
+    if ((ci&7)==ZEHN || gespcd[(ci&~7)|ZEHN]==2) aw[ci>>3]=11;
+  }
+  if (vmh!=2) {
+    for (i=0;i<4;i++) {
+      if (!(i==trumpf && high[i]!=(i<<3|AS) && possc<3) &&
+	  !hatnfb[spieler][i]) aw[i]=2;
+    }
   }
   for (i=1;i<possc;i++) {
     wi=cardw[(ci=cards[possi[i]])&7];
     wj=cardw[(cj=cards[possi[j]])&7];
-    if (wi==2) wi=-1;
+    if (wi==2) wi=-2;
     else if (ci>>3==trumpf && cj>>3!=trumpf) wi=1;
     else if (wi==11) wi=aw[ci>>3];
-    if (wj==2) wj=-1;
+    if (wj==2) wj=-2;
     else if (cj>>3==trumpf && ci>>3!=trumpf) wj=1;
     else if (wj==11) wj=aw[cj>>3];
-    if (wi>wj) j=i;
+    if (wi>wj || (vmh==2 && wi==wj && !wi && (ci&7)>(cj&7))) j=i;
   }
   playcd=j;
 }
@@ -1887,7 +2102,7 @@ int einstechen()
 {
   int ci;
 
-  if (!cardw[stcd[0]&7] || !uebernehmen(0,0)) return 0;
+  if (!cardw[stcd[0]&7] || !uebernehmen(0,0,0)) return 0;
   ci=cards[possi[playcd]];
   if ((ci&7)<=ZEHN || (ci&7)==BUBE) return 0;
   if (ci>>3==trumpf) return 1;
@@ -1944,7 +2159,7 @@ int trumpfausspielen()
   g1=left(spieler);
   g2=right(spieler);
   if (!hatnfb[g1][trumpf] ||
-    !hatnfb[g2][trumpf]) {
+      !hatnfb[g2][trumpf]) {
     if (niedrighoch(trumpf)) return 1;
   }
   calc_high(1,0);
@@ -1953,8 +2168,14 @@ int trumpfausspielen()
   for (i=0;i<possc;i++) {
     if (cards[possi[i]]>>3==trumpf || (cards[possi[i]]&7)==BUBE) {
       tr++;
+    }
+  }
+  trdr=7-gespfb[trumpf];
+  for (i=0;i<4;i++) if (!gespcd[i<<3|BUBE]) trdr++;
+  for (i=0;i<possc;i++) {
+    if (cards[possi[i]]>>3==trumpf || (cards[possi[i]]&7)==BUBE) {
       wi=cardw[cards[possi[i]]&7];
-      if (wi==2) wi=-1;
+      if (wi==2 && trdr-tr!=1) wi=-1;
       if (j<0 || wi<wj) {
         j=i;
         wj=wi;
@@ -2005,15 +2226,27 @@ int trumpfausspielen()
 
 int hochausspielen()
 {
-  int i,j;
+  int i,j,k,ih[5],s[5];
 
-  if (stich<=3) return 0;
-  calc_high(2,0);
+  if (stich<2) return 0;
+  s[0]=trumpf;
+  for (j=1;j<5;j++) {
+    s[j]=j-1;
+  }
+  ih[0]=ih[1]=ih[2]=ih[3]=ih[4]=0;
   for (i=0;i<possc;i++) {
-    for (j=0;j<4;j++) {
-      if (j!=trumpf &&
+    j=cards[possi[i]];
+    if ((j&7)!=BUBE) ih[j>>3]++;
+    else ih[trumpf]++;
+  }
+  calc_high(2,0);
+  for (k=0;k<5;k++) {
+    j=s[k];
+    for (i=0;i<possc;i++) {
+      if ((j!=trumpf || stich>6) &&
 	  cards[possi[i]]==high[j] &&
-	  !hatnfb[spieler][j]) {
+	  !hatnfb[spieler][j] &&
+	  (ih[j]<=2 || stich>3)) {
 	playcd=i;
 	return 1;
       }
@@ -2024,8 +2257,21 @@ int hochausspielen()
 
 VOID schenke()
 {
-  int i,j,ci,cj,wi,wj,iw,jw;
+  int i,j,ci,cj,wi,wj,iw,jw,ih[4],ze[4],ko[4],da[4],ne[4];
 
+  if (!vmh && trumpf==4) {
+    for (i=0;i<4;i++) {
+      ih[i]=ze[i]=ko[i]=da[i]=ne[i]=0;
+    }
+    for (i=0;i<possc;i++) {
+      ci=cards[possi[i]];
+      if ((ci&7)!=BUBE) ih[ci>>3]++;
+      if ((ci&7)==ZEHN) ze[ci>>3]=1;
+      else if ((ci&7)==KOENIG) ko[ci>>3]=1;
+      else if ((ci&7)==DAME) da[ci>>3]=1;
+      else if ((ci&7)==NEUN) ne[ci>>3]=1;
+    }
+  }
   j=0;
   for (i=1;i<possc;i++) {
     ci=cards[possi[i]];
@@ -2039,12 +2285,29 @@ VOID schenke()
       wj=cj>>3;
     }
     else {
-      if (!wi && !gespcd[(ci&~7)|AS] && zehnblank(ci)) wi+=5;
-      if (!wj && !gespcd[(cj&~7)|AS] && zehnblank(cj)) wj+=5;
+      if (!wi && !gespcd[(ci&~7)|AS] && zehnblank(ci) && stich<=6) wi+=4;
+      if (!wj && !gespcd[(cj&~7)|AS] && zehnblank(cj) && stich<=6) wj+=4;
     }
-    if ((ci&7)!=BUBE && ci>>3==trumpf) wi+=5;
-    if ((cj&7)!=BUBE && cj>>3==trumpf) wj+=5;
-    if (wi<wj || (wi==wj && iw>=NEUN && jw>=NEUN && iw>jw)) j=i;
+    if ((ci&7)==BUBE || ci>>3==trumpf) wi+=5;
+    if ((cj&7)==BUBE || cj>>3==trumpf) wj+=5;
+    if (wi<wj ||
+	(wi==wj &&
+	 (((vmh || trumpf!=4) && iw>=NEUN && jw>=NEUN && iw>jw) ||
+	  (!vmh && trumpf==4 && ih[ci>>3]>ih[cj>>3]))
+	 )) j=i;
+  }
+  if (!vmh && trumpf==4) {
+    for (i=1;i<possc;i++) {
+      ci=cards[possi[i]];
+      cj=cards[possi[j]];
+      wi=cardw[iw=(ci&7)];
+      wj=cardw[jw=(cj&7)];
+      if (ci>>3==cj>>3 && ze[ci>>3] && ko[ci>>3] && ih[ci>>3]>2) {
+	if (((wi==4 && !da[ci>>3] && !ne[ci>>3]) ||
+	     (wi==3 && !ne[ci>>3]) ||
+	     iw==NEUN) && !wj) j=i;
+      }
+    }
   }
   playcd=j;
 }
@@ -2058,7 +2321,7 @@ int ci;
   n=z=a=0;
   for (i=0;i<possc;i++) {
     cj=cards[possi[i]];
-    if (cj>>3==f) {
+    if ((cj&7)!=BUBE && cj>>3==f) {
       n++;
       if ((cj&7)==ZEHN) z=1;
       else if ((cj&7)==AS) a=1;
@@ -2073,7 +2336,8 @@ int fabwerfen()
 
   fb=stcd[0]>>3;
   if (!hatnfb[spieler][fb] ||
-      cardw[stcd[0]&7]+cardw[stcd[1]&7]>4) return 0;
+      (vmh==2 && cardw[stcd[0]&7]+cardw[stcd[1]&7]>4) ||
+      (vmh==1 && cardw[stcd[0]&7]>0)) return 0;
   n[0]=n[1]=n[2]=n[3]=0;
   for (i=0;i<possc;i++) {
     ci=cards[possi[i]];
@@ -2094,12 +2358,21 @@ int fabwerfen()
   return 0;
 }
 
-VOID abwerfen(f)
-int f;
+VOID abwerfen()
 {
-  int i,j,k,ci,cj,wi,wj,mi,wio,wjo,h;
-  int n[4];
+  int i,j,ci,cj,wi,wj,mi,wio,wjo,h;
+  int gsp[4],ze[4],as[4],ih[4];
 
+  for (i=0;i<4;i++) gsp[i]=ze[i]=as[i]=ih[i]=0;
+  for (i=0;i<32;i++) {
+    if ((i&7)!=BUBE && gespcd[i]==2) gsp[i>>3]++;
+  }
+  for (i=0;i<possc;i++) {
+    ci=cards[possi[i]];
+    if ((ci&7)!=BUBE) ih[ci>>3]++;
+    if ((ci&7)==ZEHN) ze[ci>>3]=1;
+    else if ((ci&7)==AS) as[ci>>3]=1;
+  }
   j=0;
   for (i=1;i<possc;i++) {
     ci=cards[possi[i]];
@@ -2117,9 +2390,9 @@ int f;
     else {
       if (wi==5 || ci>>3==trumpf) wi+=5;
       if (wj==5 || cj>>3==trumpf) wj+=5;
-      if (!wi && zehnblank(ci)) wi+=5;
-      if (!wj && zehnblank(cj)) wj+=5;
-      if (f) {
+      if (wi<4 && zehnblank(ci) && stich<=7) wi+=wi?2:6;
+      if (wj<4 && zehnblank(cj) && stich<=7) wj+=wj?2:6;
+      if (!vmh) {
 	if (trumpf==4) {
 	  if ((ci&7)!=BUBE && hatnfb[spieler][ci>>3]) wi-=30;
 	  if ((cj&7)!=BUBE && hatnfb[spieler][cj>>3]) wj-=30;
@@ -2128,8 +2401,22 @@ int f;
 	  mi=spieler==left(ausspl)?2:1;
 	  wio=wi;
 	  wjo=wj;
-	  if (!hatnfb[spieler][ci>>3] || wi>4) wi+=8;
-	  if (!hatnfb[spieler][cj>>3] || wj>4) wj+=8;
+	  if (!hatnfb[spieler][ci>>3]) wi+=8;
+	  else if (hatnfb[spieler][ci>>3] &&
+		   hatnfb[(ausspl+mi)%3][ci>>3]!=1 &&
+		   ih[ci>>3]+gsp[ci>>3]>4 &&
+		   !as[ci>>3] && gespcd[(ci&~7)|AS]!=2) {
+	    wi+=35;
+	  }
+	  else if (wi>4) wi+=8;
+	  if (!hatnfb[spieler][cj>>3]) wj+=8;
+	  else if (hatnfb[spieler][cj>>3] &&
+		   hatnfb[(ausspl+mi)%3][cj>>3]!=1 &&
+		   ih[cj>>3]+gsp[cj>>3]>4 &&
+		   !as[cj>>3] && gespcd[(cj&~7)|AS]!=2) {
+	    wj+=35;
+	  }
+	  else if (wj>4) wj+=8;
 	  if (mi==2 && hatnfb[(ausspl+mi)%3][trumpf]!=1) {
 	    h=0;
 	    if (hatnfb[(ausspl+mi)%3][ci>>3]==1 && wio<=4) wi-=30,h++;
@@ -2138,31 +2425,48 @@ int f;
 	  }
 	}
         if (wi==wj && stich<=3 && ci>>3!=cj>>3) {
-          n[0]=n[1]=n[2]=n[3]=0;
-          for (k=0;k<possc;k++) {
-            if ((cards[possi[k]]&7)!=BUBE) {
-              n[cards[possi[k]]>>3]++;
-            }
-          }
-          if (n[ci>>3]<n[cj>>3]) wi=0;
-          if (spieler==left(ausspl)) swap(&wi,&wj);
+          if (ih[ci>>3]<ih[cj>>3]) wi--;
+          else if (ih[ci>>3]>ih[cj>>3]) wj--;
+	  else if (ih[ci>>3]==2) {
+	    if (as[ci>>3]) wi-=spieler==left(ausspl)?1:-1;
+	    if (as[cj>>3]) wj-=spieler==left(ausspl)?1:-1;
+	  }
+          if (spieler==left(ausspl) || trumpf==4) swap(&wi,&wj);
         }
       }
       else {
 	if (possc==2 && ((stcd[0]&7)==BUBE || stcd[0]>>3==trumpf) &&
-	    (wio==2 || wjo==2) && (wio==11 || wjo==11)) {
-	  if (wio==11) wi=1,wj=2;
+	    (wio==2 || wjo==2) && (wio>=10 || wjo>=10)) {
+	  if (wio>=10) wi=1,wj=2;
 	  else wi=2,wj=1;
-	  if (gespcd[BUBE]==2 || ci==BUBE || cj==BUBE ||
-	      gespcd[2<<3|BUBE]!=2 || gespcd[3<<3|BUBE]!=2) swap(&wi,&wj);
+	  if (((gespcd[BUBE]==2 &&
+	       (gespcd[trumpf<<3|AS]==2 || wio==11 || wjo==11)) ||
+	      ci==BUBE || cj==BUBE ||
+	      gespcd[2<<3|BUBE]!=2 || gespcd[3<<3|BUBE]!=2) &&
+	      !(gespcd[2<<3|BUBE]==2 && gespcd[3<<3|BUBE]!=2 && vmh==1)) {
+	    swap(&wi,&wj);
+	  }
 	}
 	else {
-	  if ((ci&7)==BUBE || (!hatnfb[spieler][ci>>3] && wi>=4)) wi+=8;
-	  if ((cj&7)==BUBE || (!hatnfb[spieler][cj>>3] && wj>=4)) wj+=8;
+	  if ((ci&7)==BUBE) wi+=5;
+	  else if (!hatnfb[spieler][ci>>3] && wi>=4) wi+=3;
+	  if ((cj&7)==BUBE) wj+=5;
+	  else if (!hatnfb[spieler][cj>>3] && wj>=4) wj+=3;
+	  if (vmh==1 && spieler!=ausspl) {
+	    if (wi>1 && wi<5 && !wj && !cardw[stcd[0]&7] &&
+		hatnfb[spieler][stcd[0]>>3]) {
+	      wi=1;wj=2;
+	    }
+	    else if (wj>1 && wj<5 && !wi && !cardw[stcd[0]&7] &&
+		     hatnfb[spieler][stcd[0]>>3]) {
+	      wi=2;wj=1;
+	    }
+	  }
 	}
       }
     }
-    if (wi<wj) j=i;
+    if (wi<wj ||
+	(wi==wj && !cardw[ci&7] && !cardw[cj&7] && (ci&7)>(cj&7))) j=i;
   }
   playcd=j;
 }
@@ -2178,9 +2482,20 @@ int buttern()
   if (!hatnfb[se][fb]) return 0;
   calc_high(2,0);
   if (spieler==ausspl) {
-    if (fb==4 ||
+    if ((fb==trumpf && gespcd[trumpf<<3|AS]==2 &&
+	 gespcd[0<<3|BUBE]==2 &&
+	 gespcd[1<<3|BUBE]==2 &&
+	 gespcd[2<<3|BUBE]==2 &&
+	 gespcd[3<<3|BUBE]==2) ||
+	((stcd[0]&7)==BUBE && gespcd[2<<3|BUBE]==2 && gespcd[3<<3|BUBE]!=2) ||
 	higher(stcd[0],high[fb]) ||
-	(hatnfb[mi][fb]==1 && hatnfb[mi][trumpf]==1)) return 0;
+	(hatnfb[mi][fb]==1 && hatnfb[mi][trumpf]==1) ||
+	(trumpf==4 && (stcd[0]&7)!=BUBE &&
+	 (gespcd[0<<3|BUBE]==2 ||
+	  gespcd[1<<3|BUBE]==2 ||
+	  gespcd[2<<3|BUBE]==2 ||
+	  gespcd[3<<3|BUBE]==2)) ||
+	cardw[stcd[0]&7]>4) return 0;
     if (butternok) return 0;
     butternok=1;
     return 1;
@@ -2194,17 +2509,18 @@ int buttern()
 
 int hatas()
 {
-  int f,as,i;
+  int f,i,k[8];
 
   f=stcd[0]>>3;
-  if ((stcd[0]&7)==BUBE || possc>2 ||
-      cardw[stcd[0]&7]>4 || hatnfb[spieler][f] || f==trumpf) return 0;
-  as=f<<3|AS;
+  for (i=0;i<8;i++) k[i]=0;
   for (i=0;i<possc;i++) {
-    if (cards[possi[i]]==as) {
-      playcd=i;
-      return 1;
-    }
+    if (cards[possi[i]]>>3==f) k[cards[possi[i]]&7]=i+1;
+  }
+  if ((stcd[0]&7)==BUBE || (possc==3 && !k[ZEHN]) || possc>3 ||
+      cardw[stcd[0]&7]>4 || hatnfb[spieler][f] || f==trumpf) return 0;
+  if (k[AS]) {
+    playcd=k[AS]-1;
+    return 1;
   }
   return 0;
 }
@@ -2214,6 +2530,8 @@ int f;
 {
   int fb,i,j,k,as,hi;
 
+  if (gstsum>=44 && gstsum<60) return 0;
+  if (stich>8 && gstsum<=30) return 0;
   fb=stcd[0]>>3;
   if ((stcd[0]&7)==BUBE ||
       (stcd[f]&7)==BUBE ||
@@ -2309,20 +2627,21 @@ VOID m_bvsp()
 
 VOID m_bmsp()
 {
-  if (!uebernehmen(0,0)) schenke();
+  if (fabwerfen()) return;
+  if (!uebernehmen(0,1,1)) schenke();
 }
 
 VOID m_bhsp()
 {
   if (fabwerfen()) return;
-  if (!uebernehmen(!higher(stcd[0],stcd[1]),1)) schenke();
+  if (!uebernehmen(!higher(stcd[0],stcd[1]),1,0)) schenke();
 }
 
 VOID m_bvns()
 {
   if (spitzefangen()) return;
   if (spieler==left(ausspl) && karobubespielen()) return;
-  if (!hochausspielen()) abwerfen(1);
+  if (!hochausspielen()) abwerfen();
 }
 
 VOID m_bmns()
@@ -2330,13 +2649,13 @@ VOID m_bmns()
   if (spitzefangen()) return;
   if (karobubespielen()) return;
   if (spieler==ausspl) {
-    if (schnippeln(0) || (!ignorieren() && uebernehmen(0,1))) return;
+    if (schnippeln(0) || (!ignorieren() && uebernehmen(0,1,0))) return;
   }
   else {
     if (einstechen() || hatas()) return;
   }
   if (buttern()) schmieren();
-  else abwerfen(0);
+  else abwerfen();
 }
 
 VOID m_bhns()
@@ -2345,7 +2664,7 @@ VOID m_bhns()
   if (karobubespielen()) return;
   if (schnippeln(1)) return;
   if (higher(stcd[0],stcd[1])^(spieler!=ausspl)) {
-    if (!uebernehmen(spieler!=ausspl,1)) abwerfen(0);
+    if (!genugdrin() || !uebernehmen(spieler!=ausspl,1,0)) abwerfen();
   }
   else {
     schmieren();
@@ -2439,6 +2758,7 @@ VOID do_spielen()
       adjfb(spieler,1);
     }
     calc_poss(s);
+    if (trumpf==-1 && stich==1 && sp) testnull(s);
     make_best(s);
     hintcard=possi[playcd];
     if (sp && hints[s]) {
@@ -2464,8 +2784,11 @@ VOID computer()
 
 VOID play()
 {
-  if (!resumebock) {
+  if (!resumebock || !playbock) {
     bockspiele=bockinc=ramschspiele=0;
+  }
+  else if (playbock!=2) {
+    ramschspiele=0;
   }
   phase=GEBEN;
   do {
@@ -2475,12 +2798,13 @@ VOID play()
   } while (!quit);
 }
 
-VOID main(argc,argv)
+int main(argc,argv)
 int argc;
 char *argv[];
 {
   setrnd(&seed[0],savseed=time((time_t *)0));
-  xinit(argc,argv);
+  xinit(theargc=argc,theargv=argv);
   play();
   exitus(0);
+  return 0;
 }

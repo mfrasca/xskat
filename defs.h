@@ -1,10 +1,21 @@
 
 /*
     xskat - a card game for 1 to 3 players.
-    Copyright (C) 1998  Gunter Gerhardt
+    Copyright (C) 2000  Gunter Gerhardt
 
     This program is free software; you can redistribute it freely.
     Use it at your own risk; there is NO WARRANTY.
+
+    Redistribution of modified versions is permitted
+    provided that the following conditions are met:
+    1. All copyright & permission notices are preserved.
+    2.a) Only changes required for packaging or porting are made.
+      or
+    2.b) It is clearly stated who last changed the program.
+         The program is renamed or
+         the version number is of the form x.y.z,
+         where x.y is the version of the original program
+         and z is an arbitrary suffix.
 */
 
 #ifndef DEFS_H
@@ -25,7 +36,7 @@ VOID irc_out();
 VOID irc_print();
 VOID irc_printnl();
 char *irc_getline();
-VOID irc_xinput();
+int irc_xinput();
 int irc_match();
 VOID irc_sendnick();
 VOID irc_pr_ss();
@@ -40,6 +51,7 @@ VOID irc_pr_spitze();
 VOID irc_pr_revolution();
 VOID irc_pr_klopfen();
 VOID irc_pr_schenken();
+VOID irc_pr_oldrules();
 VOID irc_pr_bockevents();
 VOID irc_pr_alist();
 VOID irc_pr_start();
@@ -140,6 +152,7 @@ int sage_kontra();
 int sage_re();
 int testgrand();
 VOID calc_inhand();
+int testhand();
 VOID calc_drueck();
 VOID nextgame();
 VOID save_skat();
@@ -148,6 +161,7 @@ VOID update_list();
 VOID do_grandhand();
 VOID set_prot();
 VOID do_handspiel();
+VOID do_druecken();
 VOID do_handok();
 VOID do_ansagen();
 VOID karobube();
@@ -174,7 +188,7 @@ VOID c_high();
 VOID calc_high();
 int zweihoechste();
 int ignorieren();
-int gegenbuben();
+int genugdrin();
 int uebernehmen();
 VOID schmieren();
 int einstechen();
@@ -205,10 +219,11 @@ VOID adjfb();
 VOID do_spielen();
 VOID computer();
 VOID play();
-VOID main();
+int main();
 VOID init_text();
 int langidx();
 VOID info_reiz();
+int trumpf_idx();
 VOID info_spiel();
 VOID info_stich();
 VOID clear_info();
@@ -219,10 +234,20 @@ VOID init_dials();
 VOID prverz();
 int ob_disabled();
 VOID hndl_btevent();
+VOID button_press();
+VOID draw_wedge();
+VOID draw_actbtn();
+VOID draw_selpos();
+VOID new_selpos();
+VOID new_actbtn();
+VOID set_selpos();
+VOID del_selpos();
 VOID hndl_events();
 VOID getob_xywhbd();
 VOID create_dial();
+VOID findlastex();
 VOID create_di();
+VOID create_diopt();
 VOID remove_dial();
 VOID remove_di();
 VOID draw_3d();
@@ -244,6 +269,7 @@ VOID di_konre();
 VOID di_ktrnext();
 VOID di_dicht();
 VOID di_weiter();
+VOID di_wiederweiter();
 VOID di_klopfen();
 VOID di_schenken();
 VOID di_geschenkt();
@@ -255,19 +281,23 @@ VOID di_buben();
 VOID di_spiel();
 VOID list_fun();
 VOID di_liste();
+int ger_toupper();
 VOID pformat();
 VOID prot_fun();
 VOID im_skat();
 VOID di_proto();
+VOID di_resultdi();
 VOID di_result();
 VOID di_delres();
 VOID di_options();
 VOID di_copyr();
+VOID di_grafik();
 VOID di_strateg();
 VOID di_varianten();
 VOID di_bockevents();
-VOID di_verzoegerung();
-VOID di_menubutton();
+VOID di_geschwindigkeit();
+VOID di_irc();
+VOID di_eingabe();
 VOID di_wieder();
 VOID change_gc();
 VOID change_gcbg();
@@ -283,8 +313,8 @@ VOID draw_skat();
 VOID home_skat();
 VOID nimm_stich();
 VOID drop_card();
-VOID create_colcards();
-VOID alloc_colors();
+int query_err();
+int closest_col();
 unsigned long get_col();
 VOID calc_desk();
 VOID extractnam();
@@ -294,10 +324,18 @@ VOID nomem();
 VOID finish();
 int ioerr();
 VOID exitus();
+VOID startirc();
 int getdeffn();
 VOID logit();
+int getcode();
+VOID decompgif();
+VOID drawimg();
+VOID create_card();
 VOID xinitwin();
 VOID xinitplayers();
+int closecol();
+VOID find_cardcol();
+VOID card_colors();
 VOID xinitres();
 VOID xinit();
 VOID waitt();

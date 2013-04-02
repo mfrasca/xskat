@@ -1,10 +1,21 @@
 
 /*
     xskat - a card game for 1 to 3 players.
-    Copyright (C) 1998  Gunter Gerhardt
+    Copyright (C) 2000  Gunter Gerhardt
 
     This program is free software; you can redistribute it freely.
     Use it at your own risk; there is NO WARRANTY.
+
+    Redistribution of modified versions is permitted
+    provided that the following conditions are met:
+    1. All copyright & permission notices are preserved.
+    2.a) Only changes required for packaging or porting are made.
+      or
+    2.b) It is clearly stated who last changed the program.
+         The program is renamed or
+         the version number is of the form x.y.z,
+         where x.y is the version of the original program
+         and z is an arbitrary suffix.
 */
 
 #define XIO_C
@@ -18,6 +29,9 @@
 #include <pwd.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#ifdef __EMX__ /* XFree OS/2 */
+#include <sys/select.h>
+#endif
 #include <sys/utsname.h>
 #include <X11/Xlib.h>
 #include <X11/X.h>
@@ -80,7 +94,7 @@ char *t;
 
   l=strlen(t);
   if (n) x+=(w-XTextWidth(dfont[sn],t,l))/2;
-  y+=(20*desk[sn].f/desk[sn].q-charh[sn])/2+dfont[sn]->ascent+gfx3d[sn];
+  y+=(charh[sn]+dfont[sn]->ascent-dfont[sn]->descent)/2+1-gfx3d[sn];
   if (c) {
     change_gcbg(sn,btpix[sn],gc);
   }
@@ -112,15 +126,15 @@ int sn,x,y;
   y++;
   change_gc(sn,btpix[sn],gc);
   XFillRectangle(dpy[sn],win[sn],gc[sn],x,y,
-		 64*desk[sn].f/desk[sn].q-8,18*desk[sn].f/desk[sn].q-2);
+		 64*desk[sn].f/desk[sn].q-8,charh[sn]-2);
   XFillRectangle(dpy[sn],bck[sn],gc[sn],x,y,
-		 64*desk[sn].f/desk[sn].q-8,18*desk[sn].f/desk[sn].q-2);
+		 64*desk[sn].f/desk[sn].q-8,charh[sn]-2);
   change_gc(sn,fgpix[sn],gc);
 }
 
 VOID b_text(s,str)
 int s;
-char *str;
+tx_typ *str;
 {
   int sn,x;
 
@@ -128,7 +142,7 @@ char *str;
     if (sn!=s) {
       x=s==left(sn)?desk[sn].cbox1x:desk[sn].cbox2x;
       clr_text(sn,x,desk[sn].cboxy);
-      v_gtextc(sn,1,x,desk[sn].cboxy,desk[sn].cardw,str);
+      v_gtextc(sn,1,x,desk[sn].cboxy,desk[sn].cardw,str->t[lang[sn]]);
     }
   }
 }
@@ -141,16 +155,16 @@ char *str;
   v_gtextc(sn,1,desk[sn].pboxx,desk[sn].pboxy,desk[sn].cardw,str);
   clr_text(sn,desk[sn].pboxx+desk[sn].cardw,desk[sn].pboxy);
   v_gtextc(sn,1,desk[sn].pboxx+desk[sn].cardw,desk[sn].pboxy,desk[sn].cardw,
-	   textarr[TX_PASSE]);
+	   textarr[TX_PASSE].t[lang[sn]]);
 }
 
-VOID draw_skat()
+VOID draw_skat(sn)
+int sn;
 {
-  int sn=spieler;
-
   putcard(sn,cards[30],desk[sn].skatx,desk[sn].skaty);
   putcard(sn,cards[31],desk[sn].skatx+desk[sn].cardw,
 	  desk[sn].skaty);
+  skatopen=1;
 }
 
 VOID home_skat()
@@ -159,6 +173,9 @@ VOID home_skat()
 
   homecard(sn,0,0);
   homecard(sn,0,1);
+  umdrueck=skatopen=0;
+  backopen[0]=backopen[1]=backopen[2]=1;
+  spitzeopen=1;
 }
 
 VOID nimm_stich()
@@ -168,6 +185,7 @@ VOID nimm_stich()
   for (i=0;i<3;i++) {
     homecard(sn,1,i);
   }
+  stichopen=0;
 }
 
 VOID drop_card(i,s)
@@ -175,6 +193,7 @@ int i,s;
 {
   int sn,sna[3],x1[3],y1[3],x2[3],y2[3];
 
+  if (stich==10) backopen[s]=0;
   for (sn=0;sn<numsp;sn++) {
     sna[sn]=sn;
     if (s==left(sn)) {
@@ -192,9 +211,11 @@ int i,s;
     }
     else if (stich==10) {
       putdesk(sn,x1[sn],y1[sn]);
+      if (s==spieler) spitzeopen=0;
     }
     else if (spitzeang && cards[i]==(trumpf==4?BUBE:SIEBEN|trumpf<<3)) {
       putback(sn,x1[sn],y1[sn]);
+      spitzeopen=0;
       sptzmrk=1;
       putamark(sn,spieler);
     }
@@ -206,73 +227,73 @@ int i,s;
     putcard(sn,cards[i],desk[sn].stichx+vmh*desk[sn].cardw,desk[sn].stichy);
   }
   stcd[vmh]=cards[i];
+  stichopen=vmh+1;
   gespcd[cards[i]]=2;
   if ((cards[i]&7)!=BUBE) gespfb[cards[i]>>3]++;
   cards[i]=-1;
   stdwait();
 }
 
-VOID create_colcards(sn,cwidth,cheight,cpixs,cbits,bwpix,pm)
-int sn,cwidth,cheight;
-char *cpixs;
-unsigned char *cbits;
-Pixmap bwpix,*pm;
+int query_err(d,e)
+Display *d;
+XErrorEvent *e;
 {
-  Pixmap pmc;
-  int i,j,pl,m0,m1,m2,m3,of,ix;
-
-  *pm=XCreatePixmap(dpy[sn],win[sn],cwidth,cheight/4,desk[sn].plan);
-  if (*pm==None) return;
-  XFillRectangle(dpy[sn],*pm,gcbck[sn],0,0,cwidth,cheight/4);
-  change_gcxor(sn,color[sn][4].pixel);
-  XCopyPlane(dpy[sn],bwpix,*pm,gcxor[sn],0,0,desk[sn].cardw,desk[sn].cardh,
-	     0,0,1);
-  XCopyPlane(dpy[sn],bwpix,*pm,gcxor[sn],0,0,desk[sn].cardw,desk[sn].cardh,
-	     desk[sn].cardw,0,1);
-  XCopyPlane(dpy[sn],bwpix,*pm,gcxor[sn],0,0,desk[sn].cardw,desk[sn].cardh,
-	     2*desk[sn].cardw,0,1);
-  XCopyPlane(dpy[sn],bwpix,*pm,gcxor[sn],0,0,desk[sn].cardw,desk[sn].cardh,
-	     3*desk[sn].cardw,0,1);
-  of=cheight/4*cwidth/8;
-  for (pl=0;pl<16;pl++) {
-    m0=pl&1?0:0xff;
-    m1=pl&2?0:0xff;
-    m2=pl&4?0:0xff;
-    m3=pl&8?0:0xff;
-    for (i=0;i<cheight/4;i++) {
-      for (j=0;j<cwidth/8;j++) {
-	ix=i*cwidth/8+j;
-	cpixs[ix]=
-	  (cbits[ix]^m0)&
-	  (cbits[ix+of]^m1)&
-	  (cbits[ix+of+of]^m2)&
-	  (cbits[ix+of+of+of]^m3);
-      }
-    }
-    pmc=XCreateBitmapFromData(dpy[sn],win[sn],cpixs,
-			      cwidth,cheight/4);
-    if (pmc==None) {
-      *pm=None;
-      return;
-    }
-    change_gcxor(sn,color[sn][pl+4].pixel^color[sn][4].pixel^bgpix[sn]);
-    XCopyPlane(dpy[sn],pmc,*pm,gcxor[sn],
-	       0,0,cwidth,cheight/4,0,0,1);
-    XFreePixmap(dpy[sn],pmc);
-  }
-  change_gcxor(sn,fgpix[sn]);
+  colerr=1;
+  return 0;
 }
 
-VOID alloc_colors(sn)
+int closest_col(sn,xcol)
 int sn;
+XColor *xcol;
 {
-  int i;
+  static int f[3];
+  static XColor xcm[3][256];
+  int i,j,k,pl;
+  long r,g,b;
+  int ps[9],sp;
 
-  for (i=0;i<20 && XAllocColor(dpy[sn],cmap[sn],&color[sn][i]);i++);
-  desk[sn].col=i+2;
-  for (;i<20;i++) {
-    color[sn][i].pixel=bpix[sn];
+  if (XAllocColor(dpy[sn],cmap[sn],xcol)) return 1;
+  pl=desk[sn].plan;
+  if (pl<2 || pl>8 || wpix[sn]>=1<<pl || bpix[sn]>=1<<pl) return 0;
+  if (!f[sn]) {
+    for (i=0;i<256;i++) xcm[sn][i].pixel=i;
+    colerr=0;
+    XSetErrorHandler(query_err);
+    XQueryColors(dpy[sn],cmap[sn],xcm[sn],1<<pl);
+    XSync(dpy[sn],0);
+    XSetErrorHandler(NULL);
+    if (colerr) return 0;
+    f[sn]=1;
   }
+  r=xcol->red;
+  g=xcol->green;
+  b=xcol->blue;
+  for (sp=0;sp<(1<<pl)/32+1;sp++) {
+    j=0;
+    for (k=0;k<sp;k++) {
+      if (ps[k]==j) {
+	j++;
+	k=-1;
+      }
+    }
+    for (i=j+1;i<1<<pl;i++) {
+      if (abs(xcm[sn][i].red-r)+
+	  abs(xcm[sn][i].green-g)+
+	  abs(xcm[sn][i].blue-b)<
+	  abs(xcm[sn][j].red-r)+
+	  abs(xcm[sn][j].green-g)+
+	  abs(xcm[sn][j].blue-b)) {
+	for (k=0;k<sp && ps[k]!=i;k++);
+	if (k==sp) j=i;
+      }
+    }
+    xcol->red=xcm[sn][j].red;
+    xcol->green=xcm[sn][j].green;
+    xcol->blue=xcm[sn][j].blue;
+    if (XAllocColor(dpy[sn],cmap[sn],xcol)) return 1;
+    ps[sp]=j;
+  }
+  return 0;
 }
 
 unsigned long get_col(sn,ucol,prog,col,defcol,defpix,xcol)
@@ -283,13 +304,18 @@ XColor *xcol;
 {
   char *spec;
 
-  if (ucol && XParseColor(dpy[sn],cmap[sn],ucol,xcol) &&
-      XAllocColor(dpy[sn],cmap[sn],xcol)) return xcol->pixel;
   spec=XGetDefault(dpy[sn],prog,col);
-  if (spec && XParseColor(dpy[sn],cmap[sn],spec,xcol) &&
-      XAllocColor(dpy[sn],cmap[sn],xcol)) return xcol->pixel;
-  if (defcol && XParseColor(dpy[sn],cmap[sn],defcol,xcol) &&
-      XAllocColor(dpy[sn],cmap[sn],xcol)) return xcol->pixel;
+  if ((ucol && XParseColor(dpy[sn],cmap[sn],ucol,xcol) &&
+       closest_col(sn,xcol)) ||
+      (spec && XParseColor(dpy[sn],cmap[sn],spec,xcol) &&
+       closest_col(sn,xcol)) ||
+      (defcol && XParseColor(dpy[sn],cmap[sn],defcol,xcol) &&
+       closest_col(sn,xcol))) {
+    if (desk[sn].col>2) {
+      color[sn][desk[sn].col++]=*xcol;
+    }
+    return xcol->pixel;
+  }
   xcol->pixel=defpix;
   XQueryColor(dpy[sn],cmap[sn],xcol);
   return defpix;
@@ -336,18 +362,24 @@ int sn;
 char *str;
 {
   char *eos;
-  int z,s;
+  int ln,z,s;
 
-  spnames[sn][0][0]=0;
-  spnames[sn][1][0]=0;
+  for (ln=0;ln<NUM_LANG;ln++) {
+    spnames[sn][0][ln][0]=0;
+    spnames[sn][1][ln][0]=0;
+  }
   if (!str) str="";
   if (!(eos=strchr(str,'@')) && !(eos=strchr(str,':'))) eos=str+strlen(str);
   for (z=0;z<2 && str!=eos;z++) {
     while (*str==' ' || *str=='-') str++;
     for (s=0;s<9 && str!=eos && *str!=' ' && *str!='-';s++,str++) {
-      spnames[sn][z][s]=*str=='~'?'-':*str;
+      for (ln=0;ln<NUM_LANG;ln++) {
+	spnames[sn][z][ln][s]=*str=='~'?'-':*str;
+      }
     }
-    spnames[sn][z][s]=0;
+    for (ln=0;ln<NUM_LANG;ln++) {
+      spnames[sn][z][ln][s]=0;
+    }
   }
 }
 
@@ -357,8 +389,9 @@ VOID usage()
 xskat [-display|-d display] [-geometry|-g geometry] [-font|-fn font]\n\
   [-iconic|-i] [-title|-T string] [-name prog] [-fg color] [-bg color]\n\
   [-bt color] [-3d] [-2d] [-3dtop color] [-3dbot color] [-mark color]\n\
-  [-mb button] [-tdelay sec] [-fastdeal] [-slowdeal] [-help|-h]\n\
-  [-color] [-mono] [-color1 color] .. [-color20 color] [-large] [-small]\n\
+  [-mb button] [-keyboard 0..2] [-tdelay sec] [-fastdeal] [-slowdeal]\n\
+  [-help|-h] [-frenchcards] [-french4cards] [-germancards] [-german4cards]\n\
+  [-color] [-mono] [-color1 color] .. [-color4 color] [-large] [-small]\n\
   [-up] [-down] [-alt] [-seq] [-list|-l filename] [-alist] [-nlist] [-tlist]\n\
   [-log filename] [-dolog] [-nolog] [-fmt] [-unfmt] [-game filename]\n\
   [-lang language] [-start player#] [-s1 -4..4] [-s2 -4..4] [-s3 -4..4]\n\
@@ -367,11 +400,13 @@ xskat [-display|-d display] [-geometry|-g geometry] [-font|-fn font]\n\
   [-bockevents 1..255] [-resumebock] [-noresumebock]\n\
   [-spitze] [-spitze2] [-nospitze] [-revolution] [-norevolution]\n\
   [-klopfen] [-noklopfen] [-schenken] [-noschenken] [-hint] [-nohint]\n\
+  [-newrules] [-oldrules] [-shortcut] [-noshortcut] [-askshortcut]\n\
   [-irc] [-noirc] [-irctelnet program] [-ircserver host]\n\
   [-ircport number] [-ircchannel name] [-ircnick name] [-ircuser name]\n\
-  [-ircrealname name] [-ircpos number] [-irclog file]\n\
+  [-ircrealname name] [-ircpos number]\n\
+  [-irclog file] [-irclogappend] [-irclogoverwrite]\n\
   [-auto #ofgames] [-opt filename] [player@display...]\n\
-After starting the game a mouse click will bring up a menu.\n\
+After starting the game a mouse click or ESC/F1 will bring up a menu.\n\
 ");
 }
 
@@ -410,7 +445,7 @@ int sn,ex;
 int ioerr(d)
 Display *d;
 {
-  int sn,es;
+  int sn,es=0;
 
   for (sn=0;sn<numsp;sn++) {
     if (dpy[sn]==d) lost[es=sn]=1;
@@ -427,6 +462,34 @@ int n;
     kill(irc_telnetpid,SIGHUP);
   }
   exit(n);
+}
+
+VOID startirc(f)
+int f;
+{
+  char *argv[100];
+  int i,j;
+
+  j=0;
+  if (f) {
+    argv[j++]="xterm";
+    argv[j++]="-e";
+  }
+  for (i=j;i<90 && i-j<theargc;i++) {
+    argv[i]=theargv[i-j];
+  }
+  if (f) {
+    argv[i++]="-irc";
+  }
+  else {
+    if (irc_telnetpid) {
+      kill(irc_telnetpid,SIGHUP);
+    }
+  }
+  argv[i]=0;
+  execvp(argv[0],argv);
+  fprintf(stderr,"%s not found\n",argv[0]);
+  exitus(0);
 }
 
 int getdeffn(prog_name,pfn,res,suf)
@@ -489,28 +552,412 @@ VOID logit()
 #endif
 }
 
-VOID xinitwin(sn)
-int sn;
+int getcode(bpos,csiz,msk,thegif)
+int *bpos,csiz,msk;
+unsigned char *thegif;
 {
-  Pixmap icon;
+  int pos;
+  long c;
+
+  pos=*bpos>>3;
+  c=thegif[pos]+(thegif[pos+1]<<8);
+  if (csiz>=8) c+=(long)thegif[pos+2]<<16;
+  c>>=*bpos&7;
+  *bpos+=csiz;
+  return c&msk;
+}
+
+VOID decompgif(thedata,thepic,themap,cmapsize)
+unsigned char *thedata,*thepic,**themap;
+int *cmapsize;
+{
+  unsigned char b,*p;
+  int i,bpos,cnt,csiz,isiz,cd,mc,cc,ec;
+  int ac,pc,ic,ff,fc,lc,bmsk,msk;
+  static int a[4096],e[4096],c[4097];
+  static unsigned char thegif[138*88];
+
+  bpos=cnt=pc=lc=0;
+  thedata+=10;
+  *cmapsize=1<<((*thedata++&7)+1);
+  bmsk=*cmapsize-1;
+  thedata+=2;
+  *themap=thedata;
+  thedata+=*cmapsize*3+10;
+  ec=(cc=1<<(csiz=*thedata++))+1;
+  fc=ff=cc+2;
+  isiz=++csiz;
+  msk=(mc=1<<csiz)-1;
+  p=thegif;
+  while ((b=*thedata++)) while (b--) *p++=*thedata++;
+  cd=getcode(&bpos,csiz,msk,thegif);
+  while (cd!=ec) {
+    if (cd==cc) {
+      msk=(mc=1<<(csiz=isiz))-1;
+      fc=ff;
+      ac=pc=cd=getcode(&bpos,csiz,msk,thegif);
+      *thepic++=lc=ac&bmsk;
+    }
+    else {
+      ac=ic=cd;
+      if (ac>=fc) {
+	ac=pc;
+	c[cnt++]=lc;
+      }
+      while (ac>bmsk) {
+	c[cnt++]=e[ac];
+	ac=a[ac];
+      }
+      c[cnt]=lc=ac&bmsk;
+      for (i=cnt;i>=0;i--) *thepic++=c[i];
+      cnt=0;
+      a[fc]=pc;
+      e[fc++]=lc;
+      pc=ic;
+      if (fc>=mc && csiz<12) {
+	msk=(1<<++csiz)-1;
+	mc<<=1;
+      }
+    }
+    cd=getcode(&bpos,csiz,msk,thegif);
+  }
+}
+
+VOID drawimg(sn,c,f,w,x,y)
+int sn,c,f,w,x,y;
+{
+  long i,j,k;
+  int l,p,r,g,b,m,s,gr,tc,idx,ld,pd;
+  static unsigned char thepic[138][88];
+  static int fsdbuf[2][138][3];
+  static XPoint xp[256][32];
+  unsigned long pm[256];
+  int pc[6][6][6];
+  unsigned char (*themap)[256][3];
+  int xn[256];
+  XColor xc,*xcp;
+  int cmapsize;
+
+  decompgif(f<0?back_gif:blatt[sn]>=2?de_gif[f][w]:fr_gif[f][w],
+	    (unsigned char *)thepic,(unsigned char **)&themap,&cmapsize);
+  tc=desk[sn].plan>=12 && desk[sn].col>2;
+  xcp=&color[sn][0];
+  if (!tc) {
+    for (i=0;i<=0xffff;i+=0x3333) {
+      for (j=0;j<=0xffff;j+=0x3333) {
+	for (k=0;k<=0xffff;k+=0x3333) {
+	  l=0;
+	  ld=abs(xcp[l].red-i)+abs(xcp[l].green-j)+abs(xcp[l].blue-k);
+	  for (p=1;p<desk[sn].col;p++) {
+	    pd=abs(xcp[p].red-i)+abs(xcp[p].green-j)+abs(xcp[p].blue-k);
+	    if (pd<ld) {
+	      l=p;
+	      ld=pd;
+	    }
+	  }
+	  pc[i/0x3333][j/0x3333][k/0x3333]=l;
+	}
+      }
+    }
+  }
+  xcp[desk[sn].col].pixel=wpix[sn];
+  for (i=0;i<256;i++) {
+    xn[i]=0;
+  }
+  if (tc) {
+    for (i=0;i<cmapsize;i++) {
+      xc.red=(*themap)[i][0];
+      xc.green=(*themap)[i][1];
+      xc.blue=(*themap)[i][2];
+      if (blatt[sn]==3 && f==3 && xc.red>220 && xc.green<100 && xc.blue<100) {
+	xc.green+=xc.blue+50;
+	xc.blue=0;
+      }
+      if (xc.red==255 && xc.green==255 && xc.blue==255) {
+	pm[i]=wpix[sn];
+      }
+      else {
+	xc.red<<=8;
+	xc.green<<=8;
+	xc.blue<<=8;
+	pm[i]=closest_col(sn,&xc)?xc.pixel:bpix[sn];
+      }
+    }
+  }
+  if (f<0 || blatt[sn]<2) {
+    gr=f<0;
+    m=0;
+  }
+  else {
+    gr=de_flg[f][w]>>1;
+    m=de_flg[f][w]&1;
+  }
+  idx=0;
+  for (j=0;j<138;j++) {
+    fsdbuf[idx][j][0]=fsdbuf[idx][j][1]=fsdbuf[idx][j][2]=0;
+  }
+  idx=1-idx;
+  for (i=(desk[sn].large?87:86+(f<0));i>=0;i--) {
+    s=f<0 && i>43?1:2;
+    k=!i && m?desk[sn].large?88:58:0;
+    if (!desk[sn].large && !((i+s)%3)) {
+      continue;
+    }
+    for (j=0;j<138;j++) {
+      fsdbuf[idx][j][0]=fsdbuf[idx][j][1]=fsdbuf[idx][j][2]=0;
+    }
+    idx=1-idx;
+    for (j=(gr?137:68);j>=0;j--) {
+      p=thepic[j][i];
+      if (!tc) {
+	r=(*themap)[p][0];
+	g=(*themap)[p][1];
+	b=(*themap)[p][2];
+	if (blatt[sn]==3 && f==3 && r>220 && g<100 && b<100) {
+	  g+=b+50;
+	  b=0;
+	}
+	if (r==255 && g==255 && b==255) {
+	  p=desk[sn].col;
+	  r=g=b=0;
+	}
+	else {
+	  if (desk[sn].col<=2) {
+	    if (r>=127) r=r*19/16;
+	    if (g>=127) g=g*19/16;
+	    if (b>=127) b=b*19/16;
+	  }
+	  r+=fsdbuf[idx][j][0];
+	  if (r<0) r=0;
+	  else if (r>255) r=255;
+	  g+=fsdbuf[idx][j][1];
+	  if (g<0) g=0;
+	  else if (g>255) g=255;
+	  b+=fsdbuf[idx][j][2];
+	  if (b<0) b=0;
+	  else if (b>255) b=255;
+	  if (desk[sn].col<=2) {
+	    if (r<127) r=r*11/16;
+	    if (g<127) g=g*11/16;
+	    if (b<127) b=b*11/16;
+	  }
+	  p=pc[r/0x33][g/0x33][b/0x33];
+	  r-=xcp[p].red>>8;
+	  g-=xcp[p].green>>8;
+	  b-=xcp[p].blue>>8;
+	}
+      }
+      if (desk[sn].large) {
+	xp[p][xn[p]].x=x+i+1;
+	xp[p][xn[p]].y=y+j+1;
+	xn[p]++;
+	if (!gr) {
+	  xp[p][xn[p]].x=x+88-i+m-k;
+	  xp[p][xn[p]].y=y+138-j;
+	  xn[p]++;
+	}
+      }
+      else {
+	if (!((j+2)%3)) {
+	  if (j) {
+	    fsdbuf[idx][j-1][0]+=fsdbuf[idx][j][0];
+	    fsdbuf[idx][j-1][1]+=fsdbuf[idx][j][1];
+	    fsdbuf[idx][j-1][2]+=fsdbuf[idx][j][2];
+	  }
+	  continue;
+	}
+	xp[p][xn[p]].x=x+(i+s)*2/3-m+k;
+	xp[p][xn[p]].y=y+(j+2)*2/3;
+	xn[p]++;
+	if (!gr) {
+	  xp[p][xn[p]].x=x+59-(i+s)*2/3+m-k;
+	  xp[p][xn[p]].y=y+93-(j+2)*2/3;
+	  xn[p]++;
+	}
+      }
+      if (j) {
+	fsdbuf[idx][j-1][0]+=r*10/27;
+	fsdbuf[idx][j-1][1]+=g*10/27;
+	fsdbuf[idx][j-1][2]+=b*10/27;
+	fsdbuf[1-idx][j-1][0]+=r-r*20/27;
+	fsdbuf[1-idx][j-1][1]+=g-g*20/27;
+	fsdbuf[1-idx][j-1][2]+=b-b*20/27;
+      }
+      fsdbuf[1-idx][j][0]+=r*10/27;
+      fsdbuf[1-idx][j][1]+=g*10/27;
+      fsdbuf[1-idx][j][2]+=b*10/27;
+      if (xn[p]==32) {
+	change_gc(sn,tc?pm[p]:xcp[p].pixel,gc);
+	XDrawPoints(dpy[sn],cardpx[sn][c+1],gc[sn],xp[p],32,CoordModeOrigin);
+	xn[p]=0;
+      }
+    }
+  }
+  for (p=0;p<256;p++) {
+    if (xn[p]) {
+      change_gc(sn,tc?pm[p]:xcp[p].pixel,gc);
+      XDrawPoints(dpy[sn],cardpx[sn][c+1],gc[sn],xp[p],xn[p],CoordModeOrigin);
+    }
+  }
+}
+
+VOID create_card(sn,c)
+int sn,c;
+{
+  int i,j,p,x,y,x1,y1,x2,y2,x3,y3,f,pf,upf,w,ww,hh;
+
+  x=2;
+  y=0;
+  f=c>>3;
+  pf=blatt[sn]==1?f==0?4:f==2?5:f:f;
+  upf=desk[sn].col>pf && desk[sn].col>2;
+  w=c&7;
+  XFillRectangle(dpy[sn],cardpx[sn][c+1],gcbck[sn],0,0,
+		 desk[sn].cardw,desk[sn].cardh);
+  if (((KOENIG<=w && w<=BUBE) || c<0 || blatt[sn]>=2)) {
+    drawimg(sn,c,c<0?c:f,w-(blatt[sn]>=2?0:KOENIG),x,y);
+  }
+  else {
+    change_gc(sn,wpix[sn],gc);
+    XFillRectangle(dpy[sn],cardpx[sn][c+1],gc[sn],x+1,y+1,
+		   60*desk[sn].f/desk[sn].q-2,92*desk[sn].f/desk[sn].q);
+  }
+  change_gc(sn,bpix[sn],gc);
+  if (desk[sn].large) {
+    ww=89;
+    hh=139;
+  }
+  else {
+    ww=59;
+    hh=93;
+  }
+  for (i=(desk[sn].large?8:5);i<(desk[sn].large?82:55);i++) {
+    XDrawPoint(dpy[sn],cardpx[sn][c+1], gc[sn], x+i, y);
+    XDrawPoint(dpy[sn],cardpx[sn][c+1], gc[sn], x+i, y+hh);
+  }
+  for (j=(desk[sn].large?8:5);j<(desk[sn].large?132:89);j++) {
+    XDrawPoint(dpy[sn],cardpx[sn][c+1], gc[sn], x,    y+j);
+    XDrawPoint(dpy[sn],cardpx[sn][c+1], gc[sn], x+ww, y+j);
+  }
+  for (i=0;i<(desk[sn].large?9:5);i++) {
+    XDrawPoint(dpy[sn],cardpx[sn][c+1], gc[sn],
+	       x+frm[desk[sn].large][i][0],    y+frm[desk[sn].large][i][1]);
+    XDrawPoint(dpy[sn],cardpx[sn][c+1], gc[sn],
+	       x+ww-frm[desk[sn].large][i][0], y+hh-frm[desk[sn].large][i][1]);
+    XDrawPoint(dpy[sn],cardpx[sn][c+1], gc[sn],
+	       x+frm[desk[sn].large][i][0],    y+hh-frm[desk[sn].large][i][1]);
+    XDrawPoint(dpy[sn],cardpx[sn][c+1], gc[sn],
+	       x+ww-frm[desk[sn].large][i][0], y+frm[desk[sn].large][i][1]);
+  }
+  change_gc(sn,bgpix[sn],gc);
+  for (i=1;i<(desk[sn].large?5:3);i++) {
+    for (j=1;j<(desk[sn].large?6:4)-i;j++) {
+      XDrawPoint(dpy[sn],cardpx[sn][c+1], gc[sn], x+i,    y+j);
+      XDrawPoint(dpy[sn],cardpx[sn][c+1], gc[sn], x+ww-i, y+hh-j);
+      XDrawPoint(dpy[sn],cardpx[sn][c+1], gc[sn], x+i,    y+hh-j);
+      XDrawPoint(dpy[sn],cardpx[sn][c+1], gc[sn], x+ww-i, y+j);
+    }
+  }
+  change_gc(sn,fgpix[sn],gc);
+  if (c>=0) {
+    if (blatt[sn]<2) {
+      change_gcxor(sn,(upf?color[sn][pf].pixel:bpix[sn])^
+		   wpix[sn]^bgpix[sn]);
+      p=cnts[w];
+      do {
+	x1=f*16*desk[sn].f/desk[sn].q;
+	y1=0;
+	if (bigs[p+1]>70) x1+=64*desk[sn].f/desk[sn].q;
+	x2=x1+16*desk[sn].f/desk[sn].q;
+	y2=y1+16*desk[sn].f/desk[sn].q;
+	x3=bigs[p++];
+	y3=bigs[p++];
+	if (!desk[sn].large) {
+	  x3=x3*2/3+(KOENIG<=w && w<=BUBE && p-2!=cnts[w]?1:0);
+	  y3=y3*2/3+(KOENIG<=w && w<=BUBE && p-2!=cnts[w]?1:0);
+	}
+	if (upf) {
+	  XCopyPlane(dpy[sn],symbs[sn],cardpx[sn][c+1],gcxor[sn],
+		     x1+2*desk[sn].cardw,y1,x2-x1,y2-y1,x+x3,y+y3,1);
+	}
+	else {
+	  XCopyPlane(dpy[sn],symbs[sn],cardpx[sn][c+1],gcxor[sn],
+		     x1,y1,x2-x1,y2-y1,x+x3,y+y3,1);
+	}
+      } while (p!=cnts[w+1]);
+    }
+    else {
+      change_gcxor(sn,bpix[sn]^wpix[sn]^bgpix[sn]);
+    }
+    for (p=0;p<8;p+=2) {
+      if (blatt[sn]<2) {
+	x1=f*8*desk[sn].f/desk[sn].q;
+	y1=16*desk[sn].f/desk[sn].q;
+	if (smls[p+1]>50) x1+=32*desk[sn].f/desk[sn].q;
+	x2=x1+8*desk[sn].f/desk[sn].q;
+	y2=y1+8*desk[sn].f/desk[sn].q;
+	if (KOENIG<=w && w<=BUBE) {
+	  x3=smls[p];
+	  y3=smls[p+1];
+	}
+	else {
+	  x3=smlz[p];
+	  y3=smlz[p+1]+(!desk[sn].large && p>3?1:0);
+	}
+	if (!desk[sn].large) {
+	  x3=x3*2/3+(p&2?1:0);
+	  y3=y3*2/3+(p>3?1:0);
+	}
+	if (upf) {
+	  XCopyPlane(dpy[sn],symbs[sn],cardpx[sn][c+1],gcxor[sn],
+		     x1+2*desk[sn].cardw,y1,x2-x1,y2-y1,x+x3,y+y3,1);
+	}
+	else {
+	  XCopyPlane(dpy[sn],symbs[sn],cardpx[sn][c+1],gcxor[sn],
+		     x1,y1,x2-x1,y2-y1,x+x3,y+y3,1);
+	}
+      }
+      if (blatt[sn]<2) {
+	x1=256+(w==AS?lang[sn]*20:w==ZEHN?p>3?23:0:w<=BUBE?
+		(w-KOENIG+1)*5+lang[sn]*20:(p>3?31:8)+(w-NEUN)*5);
+      }
+      else {
+	x1=256+(w==ZEHN?p>3?23:0:w<=BUBE?(w-KOENIG+1)*5+35:
+		(p>3?31:8)+(w-NEUN)*5);
+      }
+      x1=x1*desk[sn].f/desk[sn].q;
+      y1=(w!=ZEHN && w<=BUBE?p>3?7:0:14)+1;
+      y1=y1*desk[sn].f/desk[sn].q;
+      x2=x1+(w==ZEHN?8:5)*desk[sn].f/desk[sn].q;
+      y2=y1+7*desk[sn].f/desk[sn].q;
+      x3=smlc[p]-(w==ZEHN?p&2?4:2:0);
+      y3=smlc[p+1];
+      if (!desk[sn].large) {
+	x3=x3*2/3+(w==ZEHN?p&2?0:2:0);
+	y3=y3*2/3+(p>3?1:0);
+      }
+      if (blatt[sn]<2 || w!=AS) {
+	XCopyPlane(dpy[sn],symbs[sn],cardpx[sn][c+1],gcxor[sn],
+		   x1,y1,x2-x1,y2-y1,x+x3,y+y3,1);
+      }
+    }
+  }
+  change_gcxor(sn,fgpix[sn]);
+}
+
+VOID xinitwin(sn,argc,argv)
+int sn,argc;
+char **argv;
+{
+  Pixmap icon,iconmask;
   XClassHint classhint;
   XGCValues gcv;
-  int gcvf;
+  int i,gcvf;
+  GC igc[3];
 
-  icon=XCreateBitmapFromData(dpy[sn],DefaultRootWindow(dpy[sn]),icon_bits,
-			     icon_width,icon_height);
-  if (icon==None) nomem();
   win[sn]=XCreateSimpleWindow(dpy[sn],DefaultRootWindow(dpy[sn]),
 			      desk[sn].x,desk[sn].y,desk[sn].w,desk[sn].h,
 			      0,fgpix[sn],bgpix[sn]);
-  classhint.res_name=prog_name;
-  classhint.res_class=prog_name;
-  XSetClassHint(dpy[sn],win[sn],&classhint);
-  XSetStandardProperties(dpy[sn],win[sn],title,title,icon,
-			 (char **)0,0,&szhints);
-  wmhints.flags|=IconPixmapHint;
-  wmhints.icon_pixmap=icon;
-  XSetWMHints(dpy[sn],win[sn],&wmhints);
   cursor[sn][0]=XCreateFontCursor(dpy[sn],XC_hand2);
   cursor[sn][1]=XCreateFontCursor(dpy[sn],XC_watch);
   XDefineCursor(dpy[sn],win[sn],cursor[sn][1]);
@@ -527,39 +974,88 @@ int sn;
   gcv.background=0;
   gcv.function=GXxor;
   gcxor[sn]=XCreateGC(dpy[sn],win[sn],gcvf|GCFunction,&gcv);
-  if (desk[sn].large) {
-    bwcards[sn]=XCreateBitmapFromData(dpy[sn],win[sn],bwcardl_bits,
-				      bwcardl_width,bwcardl_height);
+  symbs[sn]=XCreateBitmapFromData(dpy[sn],win[sn],(char *)symbs_bits,
+				  symbs_width,symbs_height);
+  if (symbs[sn]==None) nomem();
+  if (desk[sn].col>3) {
+    icon=XCreatePixmap(dpy[sn],win[sn],icon_width,icon_height,desk[sn].plan);
+    iconmask=XCreatePixmap(dpy[sn],win[sn],icon_width,icon_height,1);
+    if (icon==None || iconmask==None) nomem();
+    gcv.foreground=0;
+    gcv.background=0;
+    igc[sn]=XCreateGC(dpy[sn],iconmask,gcvf,&gcv);
+    XFillRectangle(dpy[sn],iconmask,igc[sn],0,0,icon_width,icon_height);
+    change_gc(sn,1,igc);
+    XCopyPlane(dpy[sn],symbs[sn],iconmask,igc[sn],128,0,16,16,1,1,1);
+    XCopyPlane(dpy[sn],symbs[sn],iconmask,igc[sn],128+16,0,16,16,16,16,1);
+    XCopyPlane(dpy[sn],symbs[sn],iconmask,igc[sn],128+32,0,16,16,16,1,1);
+    XCopyPlane(dpy[sn],symbs[sn],iconmask,igc[sn],128+48,0,16,16,1,16,1);
+    XFreeGC(dpy[sn],igc[sn]);
+    wmhints.flags|=IconMaskHint;
+    wmhints.icon_mask=iconmask;
+    change_gc(sn,wpix[sn],gc);
+    XFillRectangle(dpy[sn],icon,gc[sn],0,0,icon_width,icon_height);
+    change_gcxor(sn,color[sn][0].pixel^wpix[sn]^bgpix[sn]);
+    XCopyPlane(dpy[sn],symbs[sn],icon,gcxor[sn],128,0,16,16,1,1,1);
+    change_gcxor(sn,color[sn][1].pixel^wpix[sn]^bgpix[sn]);
+    XCopyPlane(dpy[sn],symbs[sn],icon,gcxor[sn],128+16,0,16,16,16,16,1);
+    change_gcxor(sn,color[sn][2].pixel^wpix[sn]^bgpix[sn]);
+    XCopyPlane(dpy[sn],symbs[sn],icon,gcxor[sn],128+32,0,16,16,16,1,1);
+    change_gcxor(sn,color[sn][3].pixel^wpix[sn]^bgpix[sn]);
+    XCopyPlane(dpy[sn],symbs[sn],icon,gcxor[sn],128+48,0,16,16,1,16,1);
+    change_gcxor(sn,fgpix[sn]);
+    change_gc(sn,fgpix[sn],gc);
   }
   else {
-    bwcards[sn]=XCreateBitmapFromData(dpy[sn],win[sn],bwcards_bits,
-				      bwcards_width,bwcards_height);
+    icon=XCreateBitmapFromData(dpy[sn],DefaultRootWindow(dpy[sn]),
+			       (char *)icon_bits,
+			       icon_width,icon_height);
+    if (icon==None) nomem();
   }
-  if (bwcards[sn]==None) nomem();
-  if (desk[sn].col>2) {
-    alloc_colors(sn);
-    if (desk[sn].large) {
-      create_colcards(sn,colcardl_width,colcardl_height,
-		      colcardl_pixs,colcardl_bits,bwcards[sn],
-		      &colcards[sn]);
-    }
-    else {
-      create_colcards(sn,colcards_width,colcards_height,
-		      colcards_pixs,colcards_bits,bwcards[sn],
-		      &colcards[sn]);
-    }
-    if (colcards[sn]==None) nomem();
+  classhint.res_name=prog_name;
+  classhint.res_class=prog_name;
+  XSetClassHint(dpy[sn],win[sn],&classhint);
+  XSetStandardProperties(dpy[sn],win[sn],title[sn],title[sn],icon,
+			 argv,argc,&szhints[sn]);
+#ifdef PWinGravity
+  szhints[sn].win_gravity=
+    (geom_f[sn]&XNegative?
+     (geom_f[sn]&YNegative?
+    SouthEastGravity:NorthEastGravity):
+     (geom_f[sn]&YNegative?
+    SouthWestGravity:NorthWestGravity));
+  szhints[sn].flags|=PWinGravity;
+  XSetWMNormalHints(dpy[sn],win[sn],&szhints[sn]);
+#endif
+  if (szhints[sn].flags&USPosition) {
+    XMoveWindow(dpy[sn],win[sn],szhints[sn].x,szhints[sn].y);
+  }
+  wmhints.flags|=IconPixmapHint;
+  wmhints.icon_pixmap=icon;
+  XSetWMHints(dpy[sn],win[sn],&wmhints);
+  if (desk[sn].large) {
+    XFreePixmap(dpy[sn],symbs[sn]);
+    symbs[sn]=XCreateBitmapFromData(dpy[sn],win[sn],(char *)symbl_bits,
+				    symbl_width,symbl_height);
+    if (symbs[sn]==None) nomem();
   }
   bck[sn]=XCreatePixmap(dpy[sn],win[sn],desk[sn].w,desk[sn].h,desk[sn].plan);
   if (bck[sn]==None) nomem();
+  for (i=0;i<33;i++) {
+    cardpx[sn][i]=XCreatePixmap(dpy[sn],win[sn],
+				desk[sn].cardw,desk[sn].cardh,
+				desk[sn].plan);
+    if (cardpx[sn][i]==None) nomem();
+    create_card(sn,i-1);
+  }
   XFillRectangle(dpy[sn],win[sn],gcbck[sn],0,0,desk[sn].w,desk[sn].h);
   XFillRectangle(dpy[sn],bck[sn],gcbck[sn],0,0,desk[sn].w,desk[sn].h);
   if (!irc_play || irc_pos==sn) {
-    XSelectInput(dpy[sn],win[sn],ButtonPressMask|ExposureMask|KeyPressMask);
+    XSelectInput(dpy[sn],win[sn],ButtonPressMask|ExposureMask|
+		 KeyPressMask|KeyReleaseMask);
     XMapWindow(dpy[sn],win[sn]);
   }
 }
-
 
 VOID xinitplayers()
 {
@@ -580,11 +1076,123 @@ VOID xinitplayers()
     b3dpix[sn]=b3dpix[0];
     gfx3d[sn]=gfx3d[0];
     memcpy((VOID *)color[sn],(VOID *)color[0],sizeof(color[0]));
+    title[sn]=title[0];
     dfont[sn]=dfont[0];
     charw[sn]=charw[0];
     charh[sn]=charh[0];
+    useoptfile[sn]=useoptfile[0];
     mbutton[sn]=mbutton[0];
+    keyboard[sn]=keyboard[0];
+    abkuerz[sn]=abkuerz[0];
+    nimmstich[sn][0]=nimmstich[0][0];
+    sort1[sn]=sort1[0];
+    alternate[sn]=alternate[0];
+    alist[sn]=alist[0];
     hints[sn]=hints[0];
+    blatt[sn]=blatt[0];
+    lang[sn]=lang[0];
+    geom_f[sn]=geom_f[0];
+    geom_x[sn]=geom_x[0];
+    geom_y[sn]=geom_y[0];
+    szhints[sn]=szhints[0];
+  }
+}
+
+int closecol(x,r)
+int x,*r;
+{
+  int i;
+
+  for (i=1;x>r[i];i++);
+  return i-(r[i]-x>x-r[i-1]);
+}
+
+VOID find_cardcol(bm,r,col)
+unsigned char *bm;
+int *r,col[6][6][6];
+{
+  int i,s;
+
+  bm+=10;
+  s=1<<((*bm++&7)+1);
+  bm+=2;
+  for (i=0;i<s;i++) {
+    col[closecol(bm[0],r)][closecol(bm[1],r)][closecol(bm[2],r)]=1;
+    bm+=3;
+  }
+}
+
+VOID card_colors(sn)
+int sn;
+{
+  int c,i,j,k,ncol;
+  int col[6][6][6];
+  unsigned long p;
+  XColor xc;
+
+  if (desk[sn].col<=2 ||
+      desk[sn].plan>=12) {
+    return;
+  }
+  else if (desk[sn].plan>=8) {
+    c=0;
+  }
+  else if (desk[sn].plan>=7) {
+    c=1;
+  }
+  else if (desk[sn].plan>=6) {
+    c=2;
+  }
+  else {
+    c=3;
+  }
+  for (;c<4;c++) {
+    for (i=0;i<6-c;i++) {
+      for (j=0;j<6-c;j++) {
+	for (k=0;k<6-c;k++) {
+	  col[i][j][k]=0;
+	}
+      }
+    }
+    for (i=0;i<4;i++) {
+      for (j=0;j<3;j++) {
+	find_cardcol(fr_gif[i][j],ramp[c],col);
+      }
+      for (j=0;j<8;j++) {
+	find_cardcol(de_gif[i][j],ramp[c],col);
+      }
+    }
+    find_cardcol(back_gif,ramp[c],col);
+    ncol=0;
+    for (i=0;i<6-c;i++) {
+      for (j=0;j<6-c;j++) {
+	for (k=0;k<6-c;k++) {
+	  if (col[i][j][k]) {
+	    xc.red=ramp[c][i]<<8;
+	    xc.green=ramp[c][j]<<8;
+	    xc.blue=ramp[c][k]<<8;
+	    if (closest_col(sn,&xc)) {
+	      color[sn][desk[sn].col+ncol++]=xc;
+	    }
+	    else {
+	      i=j=k=7;
+	    }
+	  }
+	}
+      }
+    }
+    if (i<7) {
+      desk[sn].col+=ncol;
+      return;
+    }
+    for (i=0;i<ncol;i++) {
+      p=color[sn][desk[sn].col+i].pixel;
+      for (j=0;j<desk[sn].col && color[sn][j].pixel!=p;j++);
+      if (j==desk[sn].col) {
+	for (j=i+1;j<ncol && color[sn][desk[sn].col+j].pixel!=p;j++);
+	if (j==ncol) XFreeColors(dpy[sn],cmap[sn],&p,1,0);
+      }
+    }
   }
 }
 
@@ -598,13 +1206,14 @@ int sn;
   int scr;
   XColor fgcol,nocol;
   unsigned long borw;
-  int i,len,cw,nw;
+  int i,len,cw,nw,ln;
+  unsigned int w,h;
   struct passwd *pwd;
 
   if (sn) {
-    font_name=title=fg_col=bg_col=bt_col=0;
+    font_name=fg_col=bg_col=bt_col=0;
     w3d_col=b3d_col=mk_col=0;
-    bwcol=downup=altseq=alist[sn]=-1;
+    bwcol=gfx3d[sn]=desk[sn].large=-1;
     extractnam(sn,disp_name[sn]);
     if (strchr(disp_name[sn],'@')) {
       disp_name[sn]=strchr(disp_name[sn],'@')+1;
@@ -625,6 +1234,36 @@ int sn;
   desk[sn].plan=DefaultDepth(dpy[sn],scr);
   bpix[sn]=BlackPixel(dpy[sn],scr);
   wpix[sn]=WhitePixel(dpy[sn],scr);
+  for (i=0;i<4;i++) {
+    if (sn || !ccol[i] ||
+	!XParseColor(dpy[sn],cmap[sn],ccol[i],&color[sn][i])) {
+      sprintf(cbuf,"color%d",i+1);
+      res=XGetDefault(dpy[sn],prog_name,cbuf);
+      if (res) {
+	XParseColor(dpy[sn],cmap[sn],res,&color[sn][i]);
+      }
+    }
+  }
+  if (bwcol<0) {
+    res=XGetDefault(dpy[sn],prog_name,"color");
+    bwcol=!res || istrue(res);
+  }
+  if (bwcol && desk[sn].plan>1) {
+    for (i=0;i<6 && closest_col(sn,&color[sn][i]);i++);
+    if (i!=6) {
+      if (i==4) color[sn][i++]=color[sn][0];
+      if (i==5) color[sn][i++]=color[sn][2];
+      else i=0;
+    }
+  }
+  else i=0;
+  color[sn][i].pixel=wpix[sn];
+  color[sn][i].red=color[sn][i].green=color[sn][i].blue=0xffff;
+  i++;
+  color[sn][i].pixel=bpix[sn];
+  color[sn][i].red=color[sn][i].green=color[sn][i].blue=0;
+  i++;
+  desk[sn].col=i;
   fgpix[sn]=get_col(sn,fg_col,prog_name,"foreground",NULL,bpix[sn],&fgcol);
   borw=(long)fgcol.red+fgcol.green+fgcol.blue<0x1E000L?wpix[sn]:bpix[sn];
   if (gfx3d[sn]<0) {
@@ -650,16 +1289,7 @@ int sn;
   mkpix[sn]=get_col(sn,mk_col,prog_name,"mark",
 		    desk[sn].plan>1?"#ffff00000000":"black",
 		    bpix[sn],&nocol);
-  for (i=0;i<20;i++) {
-    if (sn || !ccol[i] ||
-	!XParseColor(dpy[sn],cmap[sn],ccol[i],&color[sn][i])) {
-      sprintf(cbuf,"color%d",i+1);
-      res=XGetDefault(dpy[sn],prog_name,cbuf);
-      if (res) {
-	XParseColor(dpy[sn],cmap[sn],res,&color[sn][i]);
-      }
-    }
-  }
+  card_colors(sn);
   if (desk[sn].large<0) {
     res=XGetDefault(dpy[sn],prog_name,"large");
     if (res) desk[sn].large=istrue(res);
@@ -669,8 +1299,12 @@ int sn;
     }
   }
   calc_desk(sn);
-  if (!title &&
-      !(title=XGetDefault(dpy[sn],prog_name,"title"))) title=prog_name;
+  if (!title[sn] &&
+      !(title[sn]=XGetDefault(dpy[sn],prog_name,"title"))) title[sn]=prog_name;
+  if (!geom_f[sn] &&
+      (res=XGetDefault(dpy[sn],prog_name,"geometry"))) {
+    geom_f[sn]=XParseGeometry(res,&geom_x[sn],&geom_y[sn],&w,&h);
+  }
   if (!font_name &&
       !(font_name=XGetDefault(dpy[sn],prog_name,"font"))) {
     font_name=desk[sn].large?"10x20":"9x15";
@@ -680,24 +1314,10 @@ int sn;
     exitus(1);
   }
   charw[sn]=dfont[sn]->max_bounds.width;
-  charh[sn]=dfont[sn]->max_bounds.ascent+dfont[sn]->max_bounds.descent+
-    gfx3d[sn]+1;
-  if (!sn && !opt_file) {
-    getdeffn(prog_name,&opt_file,"opt","xskat.opt");
-  }
-  if (opt_file && !*opt_file) opt_file=0;
-  if (!sn && !prot_file) {
-    logdef=getdeffn(prog_name,&prot_file,"log","xskat.log");
-  }
-  if (prot_file && !*prot_file) prot_file=0;
-  if (!sn && logging<0) {
-    res=XGetDefault(dpy[sn],prog_name,"dolog");
-    logging=(res && istrue(res)) || (!res && logdef);
-  }
-  if (!sn && unformatted<0) {
-    res=XGetDefault(dpy[sn],prog_name,"formatted");
-    unformatted=!(res && istrue(res));
-  }
+  charh[sn]=dfont[sn]->max_bounds.ascent+dfont[sn]->max_bounds.descent+1;
+  if (desk[sn].large && charh[sn]<21) charh[sn]=21;
+  else if (charh[sn]<16) charh[sn]=16;
+  charh[sn]+=gfx3d[sn]+(charh[sn]&1);
   if (sn) {
     res=XGetDefault(dpy[sn],prog_name,"useoptfile");
     useoptfile[sn]=res && istrue(res);
@@ -705,47 +1325,38 @@ int sn;
   else {
     useoptfile[sn]=1;
   }
-  if (!sn && !game_file) {
-    if (!getdeffn(prog_name,&game_file,"game","")) {
-      game_file=0;
-    }
-  }
-  if (game_file && !*game_file) game_file=0;
-  if (!mbuttonset[sn]) {
-    res=XGetDefault(dpy[sn],prog_name,"menubutton");
-    if (res) {
-      mbutton[sn]=atoi(res);
-    }
+  if (!mbuttonset[sn] &&
+      (res=XGetDefault(dpy[sn],prog_name,"menubutton"))) {
+    mbutton[sn]=atoi(res);
   }
   if (mbutton[sn]<0 || mbutton[sn]>5) mbutton[sn]=0;
-  res=XGetDefault(dpy[sn],prog_name,"tdelay");
-  if (res && !tdelayset[sn]) {
+  if (!keyboardset[sn] &&
+      (res=XGetDefault(dpy[sn],prog_name,"keyboard"))) {
+    keyboard[sn]=atoi(res);
+  }
+  if (keyboard[sn]<0 || keyboard[sn]>2) keyboard[sn]=1;
+  if (!abkuerzset[sn] &&
+      (res=XGetDefault(dpy[sn],prog_name,"shortcut"))) {
+    abkuerz[sn]=atoi(res);
+    if (abkuerz[sn]<0 || abkuerz[sn]>2) abkuerz[sn]=1;
+  }
+  if (!tdelayset[sn] &&
+      (res=XGetDefault(dpy[sn],prog_name,"tdelay"))) {
     nimmstich[sn][0]=(int)(atof(res)*10+.5);
   }
   if (nimmstich[sn][0]<0) nimmstich[sn][0]=7;
   else if (nimmstich[sn][0]>101) nimmstich[sn][0]=101;
-  if (bwcol<0) {
-    res=XGetDefault(dpy[sn],prog_name,"color");
-    if (res) bwcol=istrue(res);
-    else bwcol=(DefaultVisual(dpy[sn],scr)->class!=StaticGray &&
-		DefaultVisual(dpy[sn],scr)->class!=GrayScale);
-  }
-  desk[sn].col=bwcol?3:2;
-  if (downup<0) {
+  if (!downupset[sn]) {
     res=XGetDefault(dpy[sn],prog_name,"down");
-    if (res) {
-      downup=istrue(res);
-    }
+    downup=!res || istrue(res);
   }
   sort1[sn]=!downup;
-  if (altseq<0) {
+  if (!altseqset[sn]) {
     res=XGetDefault(dpy[sn],prog_name,"alt");
-    if (res) {
-      altseq=istrue(res);
-    }
+    altseq=!res || istrue(res);
   }
   alternate[sn]=!!altseq;
-  if (alist[sn]<0) {
+  if (!alistset[sn]) {
     res=XGetDefault(dpy[sn],prog_name,"alist");
     if (res) {
       alist[sn]=istrue(res);
@@ -758,73 +1369,97 @@ int sn;
   if ((res=XGetDefault(dpy[sn],prog_name,"alias"))) {
     extractnam(sn,res);
   }
-  if (!sn) {
-    if (lang<0) {
-      lang=langidx(XGetDefault(dpy[sn],prog_name,"language"),1);
-    }
-    init_text();
-  }
-  if (!sn && !ramschset && (res=XGetDefault(dpy[sn],prog_name,"ramsch"))) {
-    playramsch=atoi(res);
-    if (playramsch<0) playramsch=0;
-    else if (playramsch>2) playramsch=2;
-  }
-  if (!sn && !sramschset && (res=XGetDefault(dpy[sn],prog_name,"sramsch"))) {
-    playsramsch=istrue(res);
-  }
-  if (!sn && !kontraset && (res=XGetDefault(dpy[sn],prog_name,"kontra"))) {
-    playkontra=atoi(res);
-    if (playkontra<0) playkontra=0;
-    else if (playkontra>2) playkontra=2;
-  }
-  if (!sn && !bockset && (res=XGetDefault(dpy[sn],prog_name,"bock"))) {
-    playbock=atoi(res);
-    if (playbock<0) playbock=0;
-    else if (playbock>2) playbock=2;
-  }
-  if (!sn && !bockeventsset &&
-      (res=XGetDefault(dpy[sn],prog_name,"bockevents"))) {
-    bockevents=atoi(res);
-  }
-  if (!sn && !resumebockset &&
-      (res=XGetDefault(dpy[sn],prog_name,"resumebock"))) {
-    resumebock=istrue(res);
-  }
-  if (!sn && !spitzezaehltset &&
-      (res=XGetDefault(dpy[sn],prog_name,"spitze"))) {
-    spitzezaehlt=atoi(res);
-    if (spitzezaehlt<0) spitzezaehlt=0;
-    else if (spitzezaehlt>2) spitzezaehlt=2;
-  }
-  if (!sn && !revolutionset &&
-      (res=XGetDefault(dpy[sn],prog_name,"revolution"))) {
-    revolution=istrue(res);
-  }
-  if (!sn && !klopfenset &&
-      (res=XGetDefault(dpy[sn],prog_name,"klopfen"))) {
-    klopfen=istrue(res);
-  }
-  if (!sn && !schenkenset &&
-      (res=XGetDefault(dpy[sn],prog_name,"schenken"))) {
-    schenken=istrue(res);
-  }
   if (!hintsset[sn] &&
       (res=XGetDefault(dpy[sn],prog_name,"hint"))) {
     hints[sn]=istrue(res);
   }
-  if (hints[sn]<0) hints[sn]=0;
+  if (!blattset[sn] &&
+      (res=XGetDefault(dpy[sn],prog_name,"cards"))) {
+    blatt[sn]=atoi(res);
+    if (blatt[sn]<0 || blatt[sn]>3) blatt[sn]=0;
+  }
+  if (!langset[sn]) {
+    lang[sn]=langidx(XGetDefault(dpy[sn],prog_name,"language"));
+  }
   if (!sn) {
-    if (irc_play<0 &&
-	(res=XGetDefault(dpy[sn],prog_name,"irc"))) {
-      irc_play=istrue(res);
+    if (!game_file) {
+      if (!getdeffn(prog_name,&game_file,"game","")) {
+	game_file=0;
+      }
     }
-    if (irc_play<0) irc_play=0;
+    logdef=!prot_file && getdeffn(prog_name,&prot_file,"log","xskat.log");
+    if (logging<0) {
+      res=XGetDefault(dpy[sn],prog_name,"dolog");
+      logging=(res && istrue(res)) || (!res && logdef);
+    }
+    if (unformatted<0) {
+      res=XGetDefault(dpy[sn],prog_name,"formatted");
+      unformatted=!(res && istrue(res));
+    }
+    if (!opt_file) {
+      getdeffn(prog_name,&opt_file,"opt","xskat.opt");
+    }
+    if (!ramschset && (res=XGetDefault(dpy[sn],prog_name,"ramsch"))) {
+      playramsch=atoi(res);
+      if (playramsch<0) playramsch=0;
+      else if (playramsch>2) playramsch=2;
+    }
+    if (!sramschset && (res=XGetDefault(dpy[sn],prog_name,"sramsch"))) {
+      playsramsch=istrue(res);
+    }
+    if (!kontraset && (res=XGetDefault(dpy[sn],prog_name,"kontra"))) {
+      playkontra=atoi(res);
+      if (playkontra<0) playkontra=0;
+      else if (playkontra>2) playkontra=2;
+    }
+    if (!bockset && (res=XGetDefault(dpy[sn],prog_name,"bock"))) {
+      playbock=atoi(res);
+      if (playbock<0) playbock=0;
+      else if (playbock>2) playbock=2;
+    }
+    if (!bockeventsset &&
+	(res=XGetDefault(dpy[sn],prog_name,"bockevents"))) {
+      bockevents=atoi(res);
+    }
+    if (!resumebockset &&
+	(res=XGetDefault(dpy[sn],prog_name,"resumebock"))) {
+      resumebock=istrue(res);
+    }
+    if (!spitzezaehltset &&
+	(res=XGetDefault(dpy[sn],prog_name,"spitze"))) {
+      spitzezaehlt=atoi(res);
+      if (spitzezaehlt<0) spitzezaehlt=0;
+      else if (spitzezaehlt>2) spitzezaehlt=2;
+    }
+    if (!revolutionset &&
+	(res=XGetDefault(dpy[sn],prog_name,"revolution"))) {
+      revolution=istrue(res);
+    }
+    if (!klopfenset &&
+	(res=XGetDefault(dpy[sn],prog_name,"klopfen"))) {
+      klopfen=istrue(res);
+    }
+    if (!schenkenset &&
+	(res=XGetDefault(dpy[sn],prog_name,"schenken"))) {
+      schenken=istrue(res);
+    }
+    if (!oldrulesset &&
+	(res=XGetDefault(dpy[sn],prog_name,"oldrules"))) {
+      oldrules=istrue(res);
+    }
+    if (irc_play<0) {
+      res=XGetDefault(dpy[sn],prog_name,"irc");
+      irc_play=res && istrue(res);
+    }
+    if (irc_logappend<0) {
+      res=XGetDefault(dpy[sn],prog_name,"irclogappend");
+      irc_logappend=res && istrue(res);
+    }
     if (!list_file) {
       getdeffn(prog_name,&list_file,
 	       irc_play?"irclist":"list",
 	       irc_play?"xskat.irc":"xskat.lst");
     }
-    if (list_file && !*list_file) list_file=0;
     if (irc_play) {
       game_file=0;
       if (irc_pos<0 &&
@@ -879,17 +1514,14 @@ int sn;
       if (!irc_logfile) {
 	getdeffn(prog_name,&irc_logfile,"irclog","xskat.ilg");
       }
-      if (irc_logfile && !*irc_logfile) irc_logfile=0;
     }
-  }
-  if (!sn && geber<0) {
-    if ((res=XGetDefault(dpy[sn],prog_name,"start"))) {
-      geber=atoi(res);
+    if (geber<0) {
+      if ((res=XGetDefault(dpy[sn],prog_name,"start"))) {
+	geber=atoi(res);
+      }
+      if (geber<1 || geber>3) geber=0;
+      else geber=left(geber);
     }
-    if (geber<1 || geber>3) geber=0;
-    else geber=left(geber);
-  }
-  if (!sn) {
     for (i=0;i<2;i++) {
       if (!stgset[i]) {
 	stgs[1]=i+'1';
@@ -900,27 +1532,37 @@ int sn;
       if (strateg[i]<-4) strateg[i]=-4;
       else if (strateg[i]>4) strateg[i]=4;
     }
+    if (prot_file && !*prot_file) prot_file=0;
+    if (opt_file && !*opt_file) opt_file=0;
+    if (game_file && !*game_file) game_file=0;
+    if (list_file && !*list_file) list_file=0;
+    if (irc_logfile && !*irc_logfile) irc_logfile=0;
   }
-  if ((geom_f&(XValue|YValue))==(XValue|YValue)) {
-    szhints.x=geom_f&XNegative?
-      XDisplayWidth(dpy[sn],scr)-geom_x-desk[sn].w:geom_x;
-    szhints.y=geom_f&YNegative?
-      XDisplayHeight(dpy[sn],scr)-geom_y-desk[sn].h:geom_y;
-    szhints.flags|=USPosition;
+  if ((geom_f[sn]&(XValue|YValue))==(XValue|YValue)) {
+    szhints[sn].x=geom_f[sn]&XNegative?
+      XDisplayWidth(dpy[sn],scr)+geom_x[sn]-desk[sn].w:geom_x[sn];
+    szhints[sn].y=geom_f[sn]&YNegative?
+      XDisplayHeight(dpy[sn],scr)+geom_y[sn]-desk[sn].h:geom_y[sn];
+    szhints[sn].flags|=USPosition;
   }
-  szhints.flags|=PMinSize|PMaxSize;
-  szhints.min_width=szhints.max_width=desk[sn].w;
-  szhints.min_height=szhints.max_height=desk[sn].h;
+  szhints[sn].flags|=PMinSize|PMaxSize;
+  szhints[sn].min_width=szhints[sn].max_width=desk[sn].w;
+  szhints[sn].min_height=szhints[sn].max_height=desk[sn].h;
   cw=1;
-  for (i=0;i<TX_LAST;i++) {
-    if ((len=strlen(textarr[i]))>3 &&
-	(nw=(XTextWidth(dfont[sn],textarr[i],len)+len-1)/len)>cw) {
-      cw=nw;
+  for (ln=0;ln<NUM_LANG;ln++) {
+    for (i=0;i<TX_NUM_TX;i++) {
+      if ((len=strlen(textarr[i].t[ln]))>3 &&
+	  (nw=(XTextWidth(dfont[sn],textarr[i].t[ln],len)+len-1)/len)>cw) {
+	cw=nw;
+      }
     }
   }
   if (cw<charw[sn]) charw[sn]=cw;
-  if (!spnames[sn][0][0]) {
-    sprintf(spnames[sn][0],textarr[TX_SPIELER],sn+1);
+  if (charw[sn]<7) charw[sn]=7;
+  for (ln=0;ln<NUM_LANG;ln++) {
+    if (!spnames[sn][0][ln][0]) {
+      sprintf(spnames[sn][0][ln],textarr[TX_SPIELER_N].t[ln],sn+1);
+    }
   }
 }
 
@@ -928,7 +1570,7 @@ VOID xinit(argc,argv)
 int argc;
 char *argv[];
 {
-  int sn,i;
+  int ln,sn,i;
   unsigned int w,h;
 
   logit();
@@ -937,28 +1579,29 @@ char *argv[];
   signal(SIGINT,exitus);
   signal(SIGTERM,exitus);
   numsp=1;
-  disp_name[0]=font_name=title=fg_col=bg_col=bt_col=0;
+  disp_name[0]=font_name=fg_col=bg_col=bt_col=0;
   w3d_col=b3d_col=mk_col=0;
-  for (i=0;i<20;i++) ccol[i]=0;
-  geom_f=0;
-  bwcol=downup=altseq=lang=geber=logging=unformatted=alist[0]=-1;
-  gfx3d[0]=gfx3d[1]=gfx3d[2]=-1;
-  hints[0]=hints[1]=hints[2]=-1;
-  irc_play=irc_pos=irc_port=-1;
+  for (i=0;i<4;i++) ccol[i]=0;
+  geber=logging=unformatted=bwcol=gfx3d[0]=desk[0].large=-1;
+  irc_play=irc_pos=irc_port=irc_logappend=-1;
   irc_telnet=irc_host=irc_channel=irc_nick=0;
   irc_user=irc_realname=irc_logfile=0;
-  alternate[0]=alternate[1]=alternate[2]=1;
   nimmstich[0][0]=nimmstich[1][0]=nimmstich[2][0]=7;
-  desk[0].large=desk[1].large=desk[2].large=-1;
+  keyboard[0]=keyboard[1]=keyboard[2]=1;
+  abkuerz[0]=abkuerz[1]=abkuerz[2]=1;
   prog_name=strrchr(argv[0],'/');
   if (prog_name) prog_name++;
   else prog_name=argv[0];
-  wmhints.flags=0;
-  szhints.flags=0;
+#ifdef __EMX__ /* XFree OS/2 */
+  _remext(prog_name);
+#endif
   while (argc>1) {
     if (!strcmp(argv[1],"-help") || !strcmp(argv[1],"-h")) {
       usage();
       exitus(0);
+    }
+    else if (!strcmp(argv[1],"-nopre")) {
+      nopre=1;
     }
     else if (!strcmp(argv[1],"-color")) {
       bwcol=1;
@@ -971,6 +1614,34 @@ char *argv[];
     }
     else if (!strcmp(argv[1],"-2d")) {
       gfx3d[0]=0;
+    }
+    else if (!strcmp(argv[1],"-frenchcards")) {
+      blatt[0]=0;
+      blattset[0]=1;
+    }
+    else if (!strcmp(argv[1],"-french4cards")) {
+      blatt[0]=1;
+      blattset[0]=1;
+    }
+    else if (!strcmp(argv[1],"-germancards")) {
+      blatt[0]=2;
+      blattset[0]=1;
+    }
+    else if (!strcmp(argv[1],"-german4cards")) {
+      blatt[0]=3;
+      blattset[0]=1;
+    }
+    else if (!strcmp(argv[1],"-noshortcut")) {
+      abkuerz[0]=0;
+      abkuerzset[0]=1;
+    }
+    else if (!strcmp(argv[1],"-askshortcut")) {
+      abkuerz[0]=1;
+      abkuerzset[0]=1;
+    }
+    else if (!strcmp(argv[1],"-shortcut")) {
+      abkuerz[0]=2;
+      abkuerzset[0]=1;
     }
     else if (!strcmp(argv[1],"-iconic") || !strcmp(argv[1],"-i")) {
       wmhints.flags|=StateHint;
@@ -1110,6 +1781,14 @@ char *argv[];
       schenken=0;
       schenkenset=1;
     }
+    else if (!strcmp(argv[1],"-newrules")) {
+      oldrules=0;
+      oldrulesset=1;
+    }
+    else if (!strcmp(argv[1],"-oldrules")) {
+      oldrules=1;
+      oldrulesset=1;
+    }
     else if (!strcmp(argv[1],"-fastdeal")) {
       fastdeal=1;
       fastdealset=1;
@@ -1132,6 +1811,14 @@ char *argv[];
     else if (!strcmp(argv[1],"-noirc")) {
       irc_play=0;
     }
+    else if (!strcmp(argv[1],"-irclogappend")) {
+      irc_logappend=1;
+      irc_play=1;
+    }
+    else if (!strcmp(argv[1],"-irclogoverwrite")) {
+      irc_logappend=0;
+      irc_play=1;
+    }
     else if ((argv[1][0]!='-') && numsp<3) {
       disp_name[numsp++]=argv[1];
     }
@@ -1140,13 +1827,13 @@ char *argv[];
 	disp_name[0]=argv[2];
       }
       else if (!strcmp(argv[1],"-geometry") || !strcmp(argv[1],"-g")) {
-	geom_f=XParseGeometry(argv[2],&geom_x,&geom_y,&w,&h);
+	geom_f[0]=XParseGeometry(argv[2],&geom_x[0],&geom_y[0],&w,&h);
       }
       else if (!strcmp(argv[1],"-name") || !strcmp(argv[1],"-n")) {
 	prog_name=argv[2];
       }
       else if (!strcmp(argv[1],"-title") || !strcmp(argv[1],"-T")) {
-	title=argv[2];
+	title[0]=argv[2];
       }
       else if (!strcmp(argv[1],"-fg")) {
 	fg_col=argv[2];
@@ -1168,11 +1855,15 @@ char *argv[];
       }
       else if (!strncmp(argv[1],"-color",6) &&
 	       (i=atoi(argv[1]+6))>=1 && i<=20) {
-	ccol[i-1]=argv[2];
+	if (i<=4) ccol[i-1]=argv[2];
       }
       else if (!strcmp(argv[1],"-mb")) {
 	mbutton[0]=atoi(argv[2]);
 	mbuttonset[0]=1;
+      }
+      else if (!strcmp(argv[1],"-keyboard")) {
+	keyboard[0]=atoi(argv[2]);
+	keyboardset[0]=1;
       }
       else if (!strcmp(argv[1],"-tdelay")) {
 	nimmstich[0][0]=(int)(atof(argv[2])*10+.5);
@@ -1199,7 +1890,8 @@ char *argv[];
 	game_file=argv[2];
       }
       else if (!strcmp(argv[1],"-lang")) {
-	lang=langidx(argv[2],0);
+	lang[0]=langidx(argv[2]);
+	langset[0]=1;
       }
       else if (!strcmp(argv[1],"-start")) {
 	geber=atoi(argv[2]);
@@ -1268,14 +1960,14 @@ char *argv[];
     }
     argc--;argv++;
   }
+  init_text();
   if (numgames) {
     numsp=irc_play=0;
-    if (lang<0) lang=langidx((char *)0,1);
-    init_text();
+    if (!langset[0]) lang[0]=langidx((char *)0);
+    lang[2]=lang[1]=lang[0];
     if (geber<0) geber=0;
     if (logging<0) logging=0;
     if (unformatted<0) unformatted=1;
-    if (alist[0]<0) alist[0]=0;
     for (i=0;i<3;i++) {
       if (strateg[i]<-4) strateg[i]=-4;
       else if (strateg[i]>4) strateg[i]=4;
@@ -1297,24 +1989,31 @@ char *argv[];
     read_opt();
   }
   for (sn=0;sn<numsp;sn++) {
-    xinitwin(sn);
+    selpos[sn].act=-1;
+    xinitwin(sn,sn?0:theargc,sn?(char **)0:theargv);
   }
   init_dials();
-  switch (numsp) {
-  case 0:
+  for (ln=0;ln<NUM_LANG;ln++) {
     for (sn=0;sn<3;sn++) {
-      sprintf(spnames[sn][0],"%s%d",textarr[TX_COMPUTER],sn+1);
+      tspnames[sn][0].t[ln]=spnames[sn][0][ln];
+      tspnames[sn][1].t[ln]=spnames[sn][1][ln];
     }
-    break;
-  case 1:
-    strcpy(spnames[1][0],textarr[TX_COMPUTER]);
-    strcpy(spnames[1][1],textarr[TX_LINKS]);
-    strcpy(spnames[2][0],textarr[TX_COMPUTER]);
-    strcpy(spnames[2][1],textarr[TX_RECHTS]);
-    break;
-  case 2:
-    strcpy(spnames[2][0],textarr[TX_COMPUTER]);
-    break;
+    switch (numsp) {
+    case 0:
+      for (sn=0;sn<3;sn++) {
+	sprintf(spnames[sn][0][ln],"%s%d",textarr[TX_COMPUTER].t[ln],sn+1);
+      }
+      break;
+    case 1:
+      strcpy(spnames[1][0][ln],textarr[TX_COMPUTER].t[ln]);
+      strcpy(spnames[1][1][ln],textarr[TX_LINKS].t[ln]);
+      strcpy(spnames[2][0][ln],textarr[TX_COMPUTER].t[ln]);
+      strcpy(spnames[2][1][ln],textarr[TX_RECHTS].t[ln]);
+      break;
+    case 2:
+      strcpy(spnames[2][0][ln],textarr[TX_COMPUTER].t[ln]);
+      break;
+    }
   }
   if (!irc_play) save_opt();
 }
@@ -1363,95 +2062,15 @@ int sn,x,y;
   backgr(sn,x,y,desk[sn].cardw,desk[sn].cardh);
 }
 
-VOID drawcard(sn,i,x,y)
-int sn,i,x,y;
+VOID drawcard(sn,c,x,y)
+int sn,c,x,y;
 {
-  int p,x1,y1,x2,y2,x3,y3,f,w,dxy,dx,dy,fc;
-  unsigned long wp,bp;
-
-  x+=2;
-  f=i>>3;
-  w=i&7;
-  fc=desk[sn].col>21;
-  wp=fc?color[sn][4].pixel:wpix[sn];
-  bp=fc?color[sn][19].pixel:bpix[sn];
-  if (fc && ((KOENIG<=w && w<=BUBE) || i<0)) {
-    x1=i>=0?(w-KOENIG+1)*desk[sn].cardw:0;
-    XCopyArea(dpy[sn],colcards[sn],bck[sn],gc[sn],x1,0,
-	      desk[sn].cardw,desk[sn].cardh,x,y);
-  }
-  else {
-    x1=(i>=0?KOENIG<=w && w<=BUBE?(w-KOENIG+3):2:1)*desk[sn].cardw;
-    XFillRectangle(dpy[sn],bck[sn],gcbck[sn],x,y,
-		   desk[sn].cardw,desk[sn].cardh);
-    change_gcxor(sn,wp);
-    XCopyPlane(dpy[sn],bwcards[sn],bck[sn],gcxor[sn],0,0,
-	       desk[sn].cardw,desk[sn].cardh,x,y,1);
-    change_gcxor(sn,bp^wp^bgpix[sn]);
-    XCopyPlane(dpy[sn],bwcards[sn],bck[sn],gcxor[sn],x1,0,
-	       desk[sn].cardw,desk[sn].cardh,x,y,1);
-  }
-  if (i>=0) {
-    change_gcxor(sn,(desk[sn].col>f+2?color[sn][f].pixel:bpix[sn])^
-		 wp^bgpix[sn]);
-    p=cnts[w];
-    if (w==BUBE && f==1) dxy=dx=-1;
-    else dxy=dx=0;
-    do {
-      x1=f*16*desk[sn].f/desk[sn].q;
-      y1=96*desk[sn].f/desk[sn].q;
-      if (bigs[p+1]>39) x1+=64*desk[sn].f/desk[sn].q;
-      x2=x1+16*desk[sn].f/desk[sn].q;
-      y2=y1+16*desk[sn].f/desk[sn].q;
-      dxy=-dxy;
-      x3=(bigs[p++]-2)*desk[sn].f/desk[sn].q+dxy+dx;
-      y3=bigs[p++]*desk[sn].f/desk[sn].q+dxy;
-      dx=0;
-      if (desk[sn].col>f+2) {
-	XCopyPlane(dpy[sn],bwcards[sn],bck[sn],gcxor[sn],
-		   x1+2*desk[sn].cardw,y1,x2-x1,y2-y1,x+x3,y+y3,1);
-      }
-      else {
-	XCopyPlane(dpy[sn],bwcards[sn],bck[sn],gcxor[sn],
-		   x1,y1,x2-x1,y2-y1,x+x3,y+y3,1);
-      }
-    } while (p!=cnts[w+1]);
-    for (p=0;p<8;p+=2) {
-      x1=f*8*desk[sn].f/desk[sn].q;
-      y1=112*desk[sn].f/desk[sn].q;
-      if (smls[p+1]>11) x1+=32*desk[sn].f/desk[sn].q;
-      x2=x1+8*desk[sn].f/desk[sn].q;
-      y2=y1+8*desk[sn].f/desk[sn].q;
-      if (f>0 && f<3 && p<3) dy=-1;
-      else dy=0;
-      x3=(smls[p]-2)*desk[sn].f/desk[sn].q;
-      y3=smls[p+1]*desk[sn].f/desk[sn].q+dy;
-      if (desk[sn].col>f+2) {
-	XCopyPlane(dpy[sn],bwcards[sn],bck[sn],gcxor[sn],
-		   x1+2*desk[sn].cardw,y1,x2-x1,y2-y1,x+x3,y+y3,1);
-      }
-      else {
-	XCopyPlane(dpy[sn],bwcards[sn],bck[sn],gcxor[sn],
-		   x1,y1,x2-x1,y2-y1,x+x3,y+y3,1);
-      }
-      x1=256+(w==AS?lang*20:w==ZEHN?p>3?23:0:w<=BUBE?(w-KOENIG+1)*5+lang*20:
-	      (p>3?31:8)+(w-NEUN)*5);
-      x1=x1*desk[sn].f/desk[sn].q;
-      y1=95+(w!=ZEHN && w<=BUBE?p>3?7:0:14);
-      y1=y1*desk[sn].f/desk[sn].q;
-      x2=x1+(w==ZEHN?8:5)*desk[sn].f/desk[sn].q;
-      y2=y1+7*desk[sn].f/desk[sn].q;
-      x3=(smlc[p]-(w==ZEHN?p&2?2:1:0))*desk[sn].f/desk[sn].q+
-	(w!=ZEHN && p&2 && desk[sn].f>1);
-      y3=smlc[p+1]*desk[sn].f/desk[sn].q;
-      XCopyPlane(dpy[sn],bwcards[sn],bck[sn],gcxor[sn],
-		 x1,y1,x2-x1,y2-y1,x+x3,y+y3,1);
-    }
-  }
-  change_gcxor(sn,fgpix[sn]);
-  XCopyArea(dpy[sn],bck[sn],win[sn],gc[sn],x,y,
+  XCopyArea(dpy[sn],cardpx[sn][c+1],win[sn],gc[sn],0,0,
+	    desk[sn].cardw,desk[sn].cardh,x,y);
+  XCopyArea(dpy[sn],cardpx[sn][c+1],bck[sn],gc[sn],0,0,
 	    desk[sn].cardw,desk[sn].cardh,x,y);
 }
+
 
 VOID putcard(sn,i,x,y)
 int sn,i,x,y;
@@ -1598,7 +2217,7 @@ int s,n,m;
     y1[sn]=n?desk[sn].stichy:desk[sn].skaty;
     putdesk(sn,x1[sn],y1[sn]);
   }
-  movecard(numsp,sna,x1,y1,x2,y2);
+  if (!umdrueck) movecard(numsp,sna,x1,y1,x2,y2);
 }
 
 VOID givecard(s,n)
@@ -1656,7 +2275,15 @@ int sn,sor;
   if (sor) {
     if (phase==SPIELEN && hintcard!=-1) c=cards[hintcard];
     else c=-1;
-    sort(sn);
+    if (sor!=2) sort(sn);
+    else {
+      if (skatopen) draw_skat(spieler);
+      if (phase==SPIELEN || phase==NIMMSTICH) {
+	for (i=0;i<stichopen;i++) {
+	  putcard(sn,stcd[i],desk[sn].stichx+i*desk[sn].cardw,desk[sn].stichy);
+	}
+      }
+    }
     for (i=0;i<10;i++) {
       if (c>=0 && c==cards[sn*10+i]) hintcard=sn*10+i;
       if (phase==SPIELEN && !iscomp(sn) && sn==(ausspl+vmh)%3 &&
@@ -1669,10 +2296,10 @@ int sn,sor;
   }
   if (phase!=ANSAGEN) {
     di_info(sn,-1);
-    if (predef && (!ouveang || sn==spieler)) {
+    if (predef && (!ouveang || sn==spieler) && (sn || !nopre)) {
       x=desk[sn].w/2;
       y=desk[sn].y+2*charh[sn];
-      v_gtext(sn,x,y,0,textarr[TX_VORDEFINIERTES_SPIEL]);
+      v_gtext(sn,x,y,0,textarr[TX_VORDEFINIERTES_SPIEL].t[lang[sn]]);
     }
   }
   if (phase!=ANSAGEN && ouveang) {
@@ -1688,10 +2315,10 @@ int sn,sor;
       }
       x=spieler==left(sn)?desk[sn].com2x:desk[sn].com1x;
       y=spieler==left(sn)?desk[sn].com2y:desk[sn].com1y;
-      putback(sn,x,y);
+      if (backopen[spieler==left(sn)?left(spieler):left(sn)]) putback(sn,x,y);
     }
   }
-  else if (spitzeang && sn!=spieler) {
+  else if (spitzeang && sn!=spieler && spitzeopen) {
     x=spieler==left(sn)?desk[sn].com1x:desk[sn].com2x;
     y=spieler==left(sn)?desk[sn].com1y:desk[sn].com2y;
     putcard(sn,trumpf==4?BUBE:SIEBEN|trumpf<<3,x,y);
@@ -1729,10 +2356,11 @@ VOID spielendscr()
       s=left(s);
       putcard(sn,cards[s*10+i+d],x,y2);
     }
-    if (sn!=spieler)  {
+    if (sn!=spieler || abkuerz[sn]==2)  {
       x=desk[sn].skatx+desk[sn].cardx;
       y1=(desk[sn].skaty+desk[sn].com1y+desk[sn].cardh-charh[sn])/2;
-      v_gtext(sn,x,y1,0,textarr[trumpf==-1?TX_NULL_DICHT:TX_REST_BEI_MIR]);
+      v_gtext(sn,x,y1,0,textarr[trumpf==-1?TX_NULL_DICHT:TX_REST_BEI_MIR].
+	      t[lang[sn]]);
     }
   }
   phase=WEITER;
@@ -1786,17 +2414,17 @@ VOID revolutionscr()
     di_info(sn,-2);
     x=desk[sn].skatx+desk[sn].cardx;
     y=(desk[sn].skaty+desk[sn].com1y+desk[sn].cardh-charh[sn])/2;
-    v_gtext(sn,x,y,0,textarr[TX_KARTEN_AUSTAUSCHEN]);
+    v_gtext(sn,x,y,0,textarr[TX_KARTEN_AUSTAUSCHEN].t[lang[sn]]);
     mi=left(sn)==spieler?left(spieler):left(sn);
     x=desk[sn].playx+10*desk[sn].f/desk[sn].q;
     v_gtextnc(sn,0,0,x,desk[sn].com1y+desk[sn].cardh+1,
 	      0,textarr[spieler==ausspl?TX_VORHAND:
 			spieler==left(ausspl)?TX_MITTELHAND:
-			TX_HINTERHAND]);
+			TX_HINTERHAND].t[lang[sn]]);
     v_gtextnc(sn,0,0,x,desk[sn].skaty-charh[sn]-1,
 	      0,textarr[mi==ausspl?TX_VORHAND:
 			mi==left(ausspl)?TX_MITTELHAND:
-			TX_HINTERHAND]);
+			TX_HINTERHAND].t[lang[sn]]);
     if (f) {
       tauschply=sn;
       put_fbox(sn,TX_FERTIG);
@@ -1837,7 +2465,7 @@ int sn,x,y,w;
   int xy[4];
 
   xy[0]=x+2;xy[1]=y-1;
-  xy[2]=x+w-3;xy[3]=y+18*desk[sn].f/desk[sn].q;
+  xy[2]=x+w-3;xy[3]=y+charh[sn]-gfx3d[sn]+1;
   if (gfx3d[sn]) {
     draw_3d(win[sn],bck[sn],sn,xy[0],xy[1],xy[2],xy[3],0);
   }
@@ -1914,7 +2542,7 @@ int s,c,rev;
        :desk[sn].pboxx+(c?desk[sn].cardw:0))+4;
     y=(s!=sn?desk[sn].cboxy:desk[sn].pboxy)+1;
     w=64*desk[sn].f/desk[sn].q-8;
-    h=18*desk[sn].f/desk[sn].q-2;
+    h=charh[sn]-gfx3d[sn]-1;
     if (gfx3d[sn]) {
       draw_3d(win[sn],bck[sn],sn,x-1,y-1,x+w,y+h,rev);
       draw_3d(win[sn],bck[sn],sn,x-2,y-2,x+w+1,y+h+1,rev);
@@ -1935,7 +2563,7 @@ int sn,t;
 	   80*desk[sn].f/desk[sn].q);
   v_gtextc(sn,1,desk[sn].pboxx+24*desk[sn].f/desk[sn].q,desk[sn].pboxy,
 	   80*desk[sn].f/desk[sn].q,
-	   textarr[t]);
+	   textarr[t].t[lang[sn]]);
 }
 
 VOID rem_fbox(sn)
@@ -1953,7 +2581,7 @@ int sn,rev;
   x=desk[sn].pboxx+24*desk[sn].f/desk[sn].q+4;
   y=desk[sn].pboxy+1;
   w=80*desk[sn].f/desk[sn].q-8;
-  h=18*desk[sn].f/desk[sn].q-2;
+  h=charh[sn]-gfx3d[sn]-1;
   if (gfx3d[sn]) {
     draw_3d(win[sn],bck[sn],sn,x-1,y-1,x+w,y+h,rev);
     draw_3d(win[sn],bck[sn],sn,x-2,y-2,x+w+1,y+h+1,rev);
@@ -1988,16 +2616,16 @@ int sn,x,y;
 {
   int b;
 
-  if (x<=desk[sn].pboxx+56*desk[sn].f/desk[sn].q) b=0;
+  if (x<=desk[sn].pboxx+60*desk[sn].f/desk[sn].q) b=0;
   else b=desk[sn].cardw;
-  if (x>=desk[sn].pboxx+7*desk[sn].f/desk[sn].q+b &&
-      x<=desk[sn].pboxx+56*desk[sn].f/desk[sn].q+b &&
+  if (x>=desk[sn].pboxx+3*desk[sn].f/desk[sn].q+b &&
+      x<=desk[sn].pboxx+60*desk[sn].f/desk[sn].q+b &&
       y>=desk[sn].pboxy+1 &&
       y<=desk[sn].pboxy+16*desk[sn].f/desk[sn].q) {
     di_delres(sn);
     if (b) maxrw[sn]=0;
     else {
-      maxrw[sn]=215;
+      maxrw[sn]=999-1;
     }
     do_entsch();
     return 1;
@@ -2025,8 +2653,8 @@ int sn,x,y;
     drkcd=1-drkcd;
     return 1;
   }
-  if (x>=desk[sn].pboxx+31*desk[sn].f/desk[sn].q &&
-      x<=desk[sn].pboxx+96*desk[sn].f/desk[sn].q &&
+  if (x>=desk[sn].pboxx+27*desk[sn].f/desk[sn].q &&
+      x<=desk[sn].pboxx+100*desk[sn].f/desk[sn].q &&
       y>=desk[sn].pboxy+1 &&
       y<=desk[sn].pboxy+16*desk[sn].f/desk[sn].q) inv_fbox(spieler,1);
   else return 0;
@@ -2037,6 +2665,7 @@ int sn,x,y;
     return 1;
   }
   rem_fbox(spieler);
+  drbut=0;
   if (trumpf==5) {
     putback(sn,desk[sn].skatx,desk[sn].skaty);
     putback(sn,desk[sn].skatx+desk[sn].cardw,desk[sn].skaty);
@@ -2052,8 +2681,6 @@ int sn,x,y;
   }
   home_skat();
   save_skat(1);
-  info_stich(0,cards[30],1);
-  info_stich(1,cards[31],1);
   for (c=0;c<2;c++) {
     stsum+=cardw[cards[c+30]&7];
     gespcd[cards[c+30]]=1;
@@ -2121,8 +2748,8 @@ int sn,x,y;
     }
     return 1;
   }
-  if (x>=desk[sn].pboxx+31*desk[sn].f/desk[sn].q &&
-      x<=desk[sn].pboxx+96*desk[sn].f/desk[sn].q &&
+  if (x>=desk[sn].pboxx+27*desk[sn].f/desk[sn].q &&
+      x<=desk[sn].pboxx+100*desk[sn].f/desk[sn].q &&
       y>=desk[sn].pboxy+1 &&
       y<=desk[sn].pboxy+16*desk[sn].f/desk[sn].q) inv_fbox(sn,1);
   else return 0;
@@ -2215,7 +2842,7 @@ int sn,x,y,opt,send;
     else {
       errcnt[sn]++;
       if (errcnt[sn]>=3) {
-	di_menubutton(sn);
+	di_eingabe(sn);
 	errcnt[sn]=0;
       }
     }
@@ -2227,7 +2854,8 @@ int sn,x,y,opt,send;
   return ok;
 }
 
-VOID setcurs()
+VOID setcurs(f)
+int f;
 {
   int x,y,w,sn,snn,newsn=-1;
   char clr[100];
@@ -2279,6 +2907,9 @@ VOID setcurs()
       XDefineCursor(dpy[actsn],win[actsn],cursor[actsn][0]);
     }
   }
+  if (f && actsn>=0) {
+    if (phase!=WEITER && phase!=REVOLUTION) di_info(f-1,actsn);
+  }
   if (numsp==1) return;
   if (actsn==-1) wtime=0;
   if (!wtime || wtime>=15*1000) {
@@ -2300,7 +2931,7 @@ VOID setcurs()
       wsn=actsn;
       x=desk[wsn].w/2;
       y=desk[wsn].playy-2*charh[wsn];
-      v_gtext(wsn,x,y,0,textarr[TX_DU_BIST_DRAN]);
+      v_gtext(wsn,x,y,0,textarr[TX_DU_BIST_DRAN].t[lang[wsn]]);
     }
   }
   wtime+=50;

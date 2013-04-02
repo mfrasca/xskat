@@ -1,10 +1,21 @@
 
 /*
     xskat - a card game for 1 to 3 players.
-    Copyright (C) 1998  Gunter Gerhardt
+    Copyright (C) 2000  Gunter Gerhardt
 
     This program is free software; you can redistribute it freely.
     Use it at your own risk; there is NO WARRANTY.
+
+    Redistribution of modified versions is permitted
+    provided that the following conditions are met:
+    1. All copyright & permission notices are preserved.
+    2.a) Only changes required for packaging or porting are made.
+      or
+    2.b) It is clearly stated who last changed the program.
+         The program is renamed or
+         the version number is of the form x.y.z,
+         where x.y is the version of the original program
+         and z is an arbitrary suffix.
 */
 
 #define RAMSCH_C
@@ -57,14 +68,91 @@ VOID init_ramsch()
 
 int zweibuben()
 {
+  int c0,c1,gespb;
+
   if (stich!=9 || possc!=2 ||
-      (cards[possi[0]]&7)!=BUBE ||
-      (cards[possi[1]]&7)!=BUBE) return 0;
-  if (cards[possi[0]]>>3) {
-    playcd=0;
+      ((c0=cards[possi[0]])&7)!=BUBE ||
+      ((c1=cards[possi[1]])&7)!=BUBE) return 0;
+  gespb=(gespcd[0<<3|BUBE]==2)+(gespcd[1<<3|BUBE]==2)+
+    (gespcd[2<<3|BUBE]==2)+(gespcd[3<<3|BUBE]==2);
+  if (!vmh || (vmh==1 && (stcd[0]&7)!=BUBE)) {
+    if ((c0>>3)==3 || (c1>>3)==3) {
+      if ((c0>>3)==0 || (c1>>3)==0) {
+	if (gespb) {
+	  playcd=(c1>>3)==0;
+	}
+	else {
+	  playcd=(c1>>3)==3;
+	}
+      }
+      else {
+	playcd=(c0>>3)==3;
+      }
+      return 1;
+    }
+    if ((c0>>3)==2 || (c1>>3)==2) {
+      if ((c0>>3)==0 || (c1>>3)==0) {
+	if (gespb) {
+	  playcd=(c1>>3)==0;
+	}
+	else {
+	  playcd=(c1>>3)==2;
+	}
+      }
+      return 1;
+    }
+    return 1;
+  }
+  if (vmh==1 || (vmh==2 && ((stcd[0]&7)!=BUBE)+((stcd[1]&7)!=BUBE)==1)) {
+    if ((c0>>3)==3 || (c1>>3)==3) {
+      if ((c0>>3)==0 || (c1>>3)==0) {
+	if (gespb>1) {
+	  playcd=(c1>>3)==0;
+	}
+	else {
+	  playcd=(c1>>3)==3;
+	}
+	return 1;
+      }
+      if ((c0>>3)==1 || (c1>>3)==1) {
+	if (gespb>1) {
+	  playcd=(c1>>3)==1;
+	}
+	else {
+	  if (stcd[0]==(2<<3|BUBE) || (vmh==2 && stcd[1]==(2<<3|BUBE))) {
+	    playcd=(c1>>3)==1;
+	  }
+	  else {
+	    playcd=(c1>>3)==3;
+	  }
+	}
+	return 1;
+      }
+      return 1;
+    }
+    if ((c0>>3)==2 || (c1>>3)==2) {
+      if ((c0>>3)==0 || (c1>>3)==0) {
+	if (gespb>1) {
+	  playcd=(c1>>3)==0;
+	}
+	else {
+	  if (stcd[0]==(1<<3|BUBE) || (vmh==2 && stcd[1]==(1<<3|BUBE))) {
+	    playcd=(c1>>3)==0;
+	  }
+	  else {
+	    playcd=(c1>>3)==2;
+	  }
+	}
+      }
+      return 1;
+    }
+    return 1;
+  }
+  if ((stcd[0]&7)!=BUBE && (stcd[1]&7)!=BUBE) {
+    playcd=(c1>>3)==3 || (c1>>3)==2;
   }
   else {
-    playcd=1;
+    playcd=(c1>>3)==1 || (c1>>3)==0;
   }
   return 1;
 }
@@ -159,7 +247,12 @@ VOID moeglklein()
     }
     else {
       if ((cards[possi[pc]]&7)!=BUBE) {
-	if (((cards[possi[pc]]&7)>(cards[possi[playcd]]&7) && mgb) ||
+	if ((((cards[possi[pc]]&7)>(cards[possi[playcd]]&7)) &&
+	     ((cards[possi[pc]]&7)!=ACHT ||
+	      (cards[possi[playcd]]&7)!=DAME ||
+	      !vmh ||
+	      gespcd[(cards[possi[pc]]&~7)|NEUN]==2) &&
+	     mgb) ||
 	    !mgp) {
 	  playcd=pc;
 	}
@@ -365,13 +458,35 @@ int sn,*s;
 int comp_sramsch(sn)
 int sn;
 {
-  int fb,n,i,j,c,ea;
-  int p[4],t[4],s[4],o[4];
+  int fb,n,i,j,c,ea,bb;
+  int p[4],t[4],s[4],o[4],b[4];
 
   n=unsich_fb(sn,s);
-  if (n<=1) {
-    return ((ramschspiele && klopfen) || playsramsch) &&
-      di_verdoppelt(0,!playsramsch);
+  bb=b[0]=b[1]=b[2]=b[3]=0;
+  for (i=0;i<10;i++) {
+    c=cards[sn*10+i];
+    if ((c&7)==BUBE) bb++,b[c>>3]=1;
+  }
+  if (ramschspiele && klopfen && !playsramsch) {
+    if ((n<=3 && (!n || bb<=1)) ||
+	(n<=2 && (!n || bb<=2))) {
+      return di_verdoppelt(0,1);
+    }
+  }
+  if (playsramsch) {
+    if (sn==left(ausspl)) {
+      if ((n<=3 && !bb) ||
+	  (n==1 && bb<=1 && !b[3]) ||
+	  !n) {
+	return di_verdoppelt(0,0);
+      }
+    }
+    else if ((n==3 && !bb) ||
+	     (n==2 && bb<=1 && !b[3]) ||
+	     (n==1 && bb<=2) ||
+	     !n) {
+      return di_verdoppelt(0,0);
+    }
   }
   if (!playsramsch) return 0;
   for (fb=0;fb<4;fb++) {
@@ -405,6 +520,7 @@ int sn;
   for (i=0;i<10;i++) spcards[i]=cards[sn*10+i];
   spcards[10]=cards[30];
   spcards[11]=cards[31];
+  bb=b[0]=b[1]=b[2]=b[3]=0;
   for (i=0;i<12;i++) {
     c=spcards[i];
     if ((c&7)!=BUBE) {
@@ -412,6 +528,7 @@ int sn;
       t[c>>3]++;
       inhand[c>>3][c&7]=1;
     }
+    else bb++,b[c>>3]=1;
   }
   for (fb=0;fb<4;fb++) {
     for (i=fb+1;i<4;i++) {
@@ -461,8 +578,14 @@ int sn;
       }
     }
   }
-  if (ramschspiele && klopfen && unsich_fb(sn,s)<=1 && !ggdurchm[sn]) {
-    return di_verdoppelt(0,1);
+  if (ramschspiele && klopfen && !ggdurchm[sn]) {
+    n=unsich_fb(sn,s);
+    if ((n<=3 && !bb) ||
+	(n<=2 && (bb<=1 || (bb==2 && !b[3]))) ||
+	(n<=1 && (bb<=2 || (bb==3 && b[0]))) ||
+	!n) {
+      return di_verdoppelt(0,1);
+    }
   }
   return 0;
 }
