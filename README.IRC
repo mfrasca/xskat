@@ -1,0 +1,68 @@
+-------------------------------------------------------------
+ ### XSkat times: every Fri 13:30 and Sun 18:00 MET/MEST ###
+-------------------------------------------------------------
+
+
+XSkat-IRC and telnet
+====================
+
+Some versions of telnet have a bug, that prevents them from
+reading input from a pipe correctly.
+Arbitrary characters are mapped to control characters (ex: 'd' -> 'Ctrl-C').
+This is because the call tcgetattr used to determine
+the terminal control characters
+ - fails if stdin isn't a tty (which is OK)
+ - modifies its return parameter anyway (which wasn't expected)
+
+If you have problems using the IRC feature of XSkat,
+you can patch telnet or try the workaround below.
+
+
+Patch for the BSD-based Linux-telnet
+====================================
+
+--- telnet.98.02.16.NE/telnet/sys_bsd.c~ Mon Feb 16 03:17:37 1998
++++ telnet.98.02.16.NE/telnet/sys_bsd.c  Fri May 28 21:43:51 1999
+@@ -248,9 +248,7 @@
+     nttyb = ottyb;
+ 
+ #else	/* USE_TERMIO */
+-    tcgetattr(0, &old_tc);
+-
+-    new_tc = old_tc;
++    if (!tcgetattr(0, &old_tc)) new_tc = old_tc;
+ 
+ #ifndef	VDISCARD
+     termFlushChar = CONTROL('O');
+
+
+Workaround
+==========
+
+If your telnet reads ~/.telnetrc, put something like this into that file:
+
+irc.fu-berlin.de
+ display
+ set echo ^E
+ set escape ^]
+ set rlogin off
+ set flushoutput ^O
+ set interrupt ^C
+ set quit ^\\
+ set eof ^D
+ set erase ^?
+ set kill ^U
+ set lnext ^V
+ set susp ^Z
+ set reprint ^R
+ set worderase ^W
+ set start ^Q
+ set stop ^S
+ set forw1 off
+ set forw2 off
+ set ayt ^T
+
+Leading blanks are important!
+Change the irc server line appropriately.
+The display command may be omitted.
+It just shows, whether telnet has a problem.
