@@ -1,7 +1,7 @@
 
 /*
     xskat - a card game for 1 to 3 players.
-    Copyright (C) 2000  Gunter Gerhardt
+    Copyright (C) 2004  Gunter Gerhardt
 
     This program is free software; you can redistribute it freely.
     Use it at your own risk; there is NO WARRANTY.
@@ -32,7 +32,6 @@
 #define EXTERN extern
 #endif
 
-EXTERN char spnames[3][2][NUM_LANG][10];
 EXTERN tx_typ tspnames[3][2];
 EXTERN int charw[3],charh[3];
 EXTERN int lost[3];
@@ -44,6 +43,7 @@ EXTERN unsigned long b3dpix[3],w3dpix[3],mkpix[3];
 EXTERN int gfx3d[3];
 EXTERN GC gc[3],gcbck[3],gcxor[3];
 EXTERN XFontStruct *dfont[3];
+EXTERN int ggcards;
 EXTERN Pixmap bck[3];
 EXTERN Pixmap symbs[3];
 EXTERN Pixmap cardpx[3][33];
@@ -121,13 +121,13 @@ EXTERN int bigs[]
 =
 {
   33,60,
-  15,12, 51,12, 33,27, 15,45, 51,45, 15,75, 51,75, 33,90, 15,105, 51,105,
+  15,6, 51,6, 33,24, 15,43, 51,43, 15,77, 51,77, 33,93, 15,111, 51,111,
   7,9, 60,107,
   7,9, 60,107,
   7,9, 60,107,
-  15,12, 51,12, 15,45, 51,45, 33,60, 15,75, 51,75, 15,105, 51,105,
-  15,12, 51,12, 33,36, 15,60, 51,60, 33,84, 15,105, 51,105,
-  15,12, 51,12, 33,36, 15,60, 51,60, 15,105, 51,105
+  15,6, 51,6, 15,43, 51,43, 33,60, 15,77, 51,77, 15,111, 51,111,
+  15,6, 51,6, 33,33, 15,60, 51,60, 33,87, 15,111, 51,111,
+  15,6, 51,6, 33,33, 15,60, 51,60, 15,111, 51,111
 }
 #endif
 ;

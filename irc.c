@@ -1,7 +1,7 @@
 
 /*
     xskat - a card game for 1 to 3 players.
-    Copyright (C) 2000  Gunter Gerhardt
+    Copyright (C) 2004  Gunter Gerhardt
 
     This program is free software; you can redistribute it freely.
     Use it at your own risk; there is NO WARRANTY.
@@ -344,7 +344,7 @@ int val;
 VOID irc_pr_s1(val)
 int val;
 {
-  irc_pr_sd(textarr[TX_STRATEGIE].t[lang[0]],val);
+  irc_pr_sd(textarr[TX_SPIELSTAERKE].t[lang[0]],val);
 }
 
 VOID irc_showrules(aplayramsch,aplaysramsch,aplaykontra,aplaybock,
@@ -654,7 +654,7 @@ char *msg;
 	  if (irc_state==IRC_TALK) {
 	    strateg[0]=atoi(p);
 	    if (strateg[0]<-4) strateg[0]=-4;
-	    else if (strateg[0]>4) strateg[0]=4;
+	    else if (strateg[0]>0) strateg[0]=0;
 	    irc_pr_s1(strateg[0]);
 	  }
 	}
@@ -942,6 +942,10 @@ char *q;
     for (ln=1;ln<NUM_LANG;ln++) {
       strcpy(spnames[i][0][ln],spnames[i][0][0]);
       strcpy(spnames[i][1][ln],spnames[i][1][0]);
+    }
+    if (!i) {
+      strcpy(usrname[0],spnames[0][0][0]);
+      strcpy(usrname[1],spnames[0][1][0]);
     }
     sscanf(q,"%d,%d,%d,%d,%d,%d\n",
 	   &sort1[i],&alternate[i],&desk[i].large,&alist[i],
@@ -1251,7 +1255,8 @@ char *s;
 	  }
 	}
 	else if (irc_match("/svconf",&q)) {
-	  if (irc_state==IRC_TALK) {
+	  if (irc_state==IRC_TALK || irc_state==IRC_SERVER) {
+	    irc_state=IRC_TALK;
 	    irc_getserverconf(q);
 	  }
 	}
@@ -1399,7 +1404,7 @@ VOID irc_connect()
     close(pipe2fd[0]);
     close(pipe2fd[1]);
     sprintf(buf,"%d",irc_port);
-    execlp(irc_telnet,irc_telnet,irc_host,buf,NULL);
+    execlp(irc_telnet,irc_telnet,irc_hostname,buf,NULL);
     fprintf(stderr,"Exec '%s' failed\n",irc_telnet);
     exitus(1);
   }

@@ -1,7 +1,7 @@
 
 /*
     xskat - a card game for 1 to 3 players.
-    Copyright (C) 2000  Gunter Gerhardt
+    Copyright (C) 2004  Gunter Gerhardt
 
     This program is free software; you can redistribute it freely.
     Use it at your own risk; there is NO WARRANTY.
@@ -146,7 +146,7 @@ EXTERN int cards[32],gespcd[32];
 EXTERN int quit,phase,geber,hoerer,sager,spieler;
 EXTERN int saho,reizp,gedr,vmh,stich,ausspl;
 EXTERN int possi[10],possc,stcd[3];
-EXTERN int trumpf,handsp,stsum,gstsum,spcards[12],kannspitze;
+EXTERN int trumpf,handsp,stsum,astsum,gstsum,spcards[12],kannspitze;
 EXTERN int spgew,spwert,schwz,nullv,spitzeok,nspwert;
 EXTERN int schnang,schwang,ouveang,spitzeang,revolang;
 EXTERN struct { int s,r,d,e,g; } splist[360];
@@ -158,12 +158,17 @@ EXTERN int mes1,mes2,mes3,mes4;
 EXTERN int butternok,sptruempfe;
 EXTERN int predef,logging,unformatted;
 EXTERN long seed[2],savseed,gamenr,rotateby;
-EXTERN char *list_file,*game_file,*prot_file,*opt_file;
+EXTERN char *list_file,*game_file,*prot_file,*opt_file,*cards_file;
 EXTERN int wieder,vorhandwn;
 EXTERN int karobubeanz;
 EXTERN int ndichtw;
-EXTERN int firstgame;
+EXTERN int firstgame,dlhintseen;
 EXTERN int drbut,umdrueck;
+EXTERN int pkoption;
+EXTERN char lanip[3][40];
+EXTERN int laninvite[2];
+EXTERN char irc_hostname[40];
+EXTERN int irc_hostset;
 EXTERN int theargc;
 EXTERN char **theargv;
 EXTERN struct

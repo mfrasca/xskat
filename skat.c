@@ -1,7 +1,7 @@
 
 /*
     xskat - a card game for 1 to 3 players.
-    Copyright (C) 2000  Gunter Gerhardt
+    Copyright (C) 2004  Gunter Gerhardt
 
     This program is free software; you can redistribute it freely.
     Use it at your own risk; there is NO WARRANTY.
@@ -220,6 +220,40 @@ int get_game()
   return 0;
 }
 
+int gutesblatt()
+{
+  int i,c,tr,bb,bs,as,ze;
+  int t[4];
+
+  t[0]=t[1]=t[2]=t[3]=0;
+  bb=bs=as=ze=0;
+  for (i=0;i<12;i++) {
+    c=cards[i<10?i:20+i];
+    if ((c&7)==BUBE) {
+      bb++;
+      if (i>9) bs++;
+    }
+    else t[c>>3]++;
+  }
+  tr=0;
+  for (i=1;i<4;i++) {
+    if (t[i]>=t[tr]) tr=i;
+  }
+  for (i=0;i<12;i++) {
+    c=cards[i<10?i:20+i];
+    if ((c&7)!=BUBE && c>>3!=tr) {
+      switch (c&7) {
+      case AS:as++;break;
+      case ZEHN:ze++;break;
+      }
+    }
+  }
+  tr+=bb;
+  return (tr>5 ||
+	  (tr==5 && as+ze>1) ||
+	  (bb>2 && as>1)) && bs;
+}
+
 VOID mischen()
 {
   int i,j;
@@ -240,19 +274,22 @@ VOID mischen()
     wieder=0;
   }
   else if (!get_game()) {
-    for (i=0;i<32;i++) cards[i]=i;
-    for (i=0;i<32;i++) swap(&cards[i],&cards[rndval(&seed[0],31)]);
-    for (i=0;i<10;i++) swap(&cards[geber*10+i],&cards[i]);
-    for (i=0;i<10;i++) swap(&cards[hoerer*10+i],&cards[geber==1?i:10+i]);
-    if (rotateby<0) {
-      for (i=0;i<10;i++) swap(&cards[i],&cards[10+i]);
-      for (i=0;i<10;i++) swap(&cards[10+i],&cards[20+i]);
-    }
-    else if (rotateby>0) {
-      for (i=0;i<10;i++) swap(&cards[i],&cards[20+i]);
-      for (i=0;i<10;i++) swap(&cards[20+i],&cards[10+i]);
-    }
-    gamenr++;
+    do {
+      for (i=0;i<32;i++) cards[i]=i;
+      for (i=0;i<32;i++) swap(&cards[i],&cards[rndval(&seed[0],31)]);
+      for (i=0;i<10;i++) swap(&cards[geber*10+i],&cards[i]);
+      for (i=0;i<10;i++) swap(&cards[hoerer*10+i],&cards[geber==1?i:10+i]);
+      if (rotateby<0) {
+	for (i=0;i<10;i++) swap(&cards[i],&cards[10+i]);
+	for (i=0;i<10;i++) swap(&cards[10+i],&cards[20+i]);
+      }
+      else if (rotateby>0) {
+	for (i=0;i<10;i++) swap(&cards[i],&cards[20+i]);
+	for (i=0;i<10;i++) swap(&cards[20+i],&cards[10+i]);
+      }
+      gamenr++;
+    } while ((pkoption==1 || pkoption==4) && numsp==1 && !gutesblatt());
+    if (pkoption>1) pkoption=0;
   }
   for (i=0;i<32;i++) savecards[i]=cards[i];
   setrnd(&seed[1],seed[0]);
@@ -263,6 +300,7 @@ VOID mischen()
     for (j=0;j<5;j++) hatnfb[i][j]=0;
   }
   gstsum=0;
+  astsum=0;
 }
 
 int lower(c1,c2,n)
@@ -401,19 +439,19 @@ int s;
   if ((bb+t[tr]==4 &&
        (
         (as==2 && ze>=2) ||
-        (as>=3 && as+ze>=4)
+        (as>=3)
 	)) ||
       (bb+t[tr]==5 &&
        (
-        (ze>=2 && dk+10*ze>=25 && (b[3] || b[2])) ||
-        (as>=1 && ze>=1 && dk+10*ze>=11 && (b[3] || b[2])) ||
-        (as>=2 && dk+10*ze>=6) ||
+        (dk+10*ze>=39) ||
+        (as>=1 && ze>=1 && dk+10*ze>=11 && b[3]) ||
+        (as>=2 && dk+10*ze) ||
         (as>=3)
 	)) ||
       (bb+t[tr]==6 &&
        (
-        (dk+10*ze>=18) ||
-        (10*ze+11*as>=11)
+        (dk+10*ze>=14) ||
+        (ze+as)
 	)) ||
       bb+t[tr]>=7
       ) {
@@ -424,22 +462,32 @@ int s;
     maxrw[s]=f*rwert[tr];
   }
   if (!maxrw[s]) testnull(s);
-  if (!maxrw[s] && (b[3] || b[2] || bb==2) &&
-      ((b[3] && b[2] && as>=2) ||
-       (bb+t[tr]==4 && as>=1 && dk+10*ze+11*as>=27) ||
-       (bb+t[tr]==5 && dk+10*ze+11*as>=18) ||
-       (bb+t[tr]==5 && bb==2 && 10*ze+11*as>=20))) maxrw[s]=17;
-  if (!maxrw[s] && (b[3] || b[2] || bb==2) && (bb+t[tr]==6))
-    maxrw[s]=dk+10*ze>=10?18:17;
+  if (!maxrw[s] &&
+      (((b[3] || b[2] || bb==2) &&
+       ((b[3] && b[2] && as>=2) ||
+	(bb+t[tr]==4 && as>=1 && dk+10*ze+11*as>=29) ||
+	(bb+t[tr]==5 && dk+10*ze+11*as>=19) ||
+	(bb+t[tr]==5 && ze+as>1) ||
+	(bb+t[tr]==6 && bb>2) ||
+	(bb+t[tr]==6 && dk+10*ze>=8))) ||
+       (bb+t[tr]==4 && bb && as>1) ||
+       (bb+t[tr]==5 && as>1) ||
+       (bb+t[tr]==5 && dk+10*ze+11*as>=32))) maxrw[s]=18;
+  if (!maxrw[s] &&
+      (((b[3] || b[2] || bb==2) && (bb+t[tr]==6)) ||
+       (bb+t[tr]==4 && bb>1 && as) ||
+       (bb+t[tr]==4 && bb && as && ze && dk) ||
+       (bb+t[tr]==5 && bb && as && ze) ||
+       (bb+t[tr]==5 && bb && ze && dk>4) ||
+       (bb+t[tr]==5 && bb && ze>1) ||
+       (bb+t[tr]==5 && bb>1) ||
+       (bb+t[tr]==6 && dk+10*ze+11*as>=8))) maxrw[s]=17;
   stg=strateg[numsp==0?s:numsp==1?s-1:0];
-  if (stg<0 && rnd(3)<-stg && maxrw[s] &&
-      maxrw[s]!=nullw[0] && maxrw[s]!=nullw[1] && maxrw[s]!=nullw[2] &&
-      maxrw[s]!=nullw[3] && maxrw[s]!=nullw[4]) {
-    maxrw[s]=17;
+  if (stg<0 && rnd(3)<-stg) {
+    if (maxrw[s]>17) maxrw[s]=17;
+    else if (maxrw[s]==17 || rnd(7)<-stg) maxrw[s]=2*rwert[tr];
+    else maxrw[s]=17;
   }
-  if (stg>=0 && playramsch) stg=4;
-  if (stg>0 && rnd(3)<stg && !maxrw[s] &&
-      (b[3] || b[2] || b[1])) maxrw[s]=17;
 }
 
 VOID do_geben()
@@ -497,7 +545,10 @@ VOID do_geben()
   saho=1;
   reizp=0;
   clear_info();
-  if (firstgame) {
+  if (!dlhintseen) {
+    di_copyr(0);
+  }
+  else if (firstgame) {
     di_options(-1);
   }
   else if (!f &&
@@ -1464,9 +1515,13 @@ VOID get_next()
     ramsch_stich();
     return;
   }
+  if (stich==1 && !handsp) {
+    astsum+=stsum;
+  }
   if (spieler==ausspl) {
     if (butternok==1) butternok=2;
     stsum+=cardw[stcd[0]&7]+cardw[stcd[1]&7]+cardw[stcd[2]&7];
+    astsum+=cardw[stcd[0]&7]+cardw[stcd[1]&7]+cardw[stcd[2]&7];
     nullv=1;
   }
   else {
@@ -1579,7 +1634,7 @@ FILE *f;
     for (i=0;i<3;i++) {
       if (!stgset[i]) {
 	if (va[i]<-4) va[i]=-4;
-	else if (va[i]>4) va[i]=4;
+	else if (va[i]>0) va[i]=0;
 	strateg[i]=va[i];
       }
     }
@@ -1609,8 +1664,11 @@ VOID read_opt()
 {
   FILE *f;
   int v,va[3],i;
+  char buf[40];
 
+  dlhintseen=1;
   if (!opt_file) return;
+  dlhintseen=0;
   f=fopen(opt_file,"r");
   if (!f) {
     firstgame=1;
@@ -1762,6 +1820,19 @@ VOID read_opt()
       rskatloser=!!v;
     }
   }
+  if (fscanf(f,"d %d\n",&v)==1) {
+    dlhintseen=1;
+  }
+  fscanf(f,"l %35s %35s %35s\n",lanip[0],lanip[1],lanip[2]);
+  fscanf(f,"i %d %d\n",&laninvite[0],&laninvite[1]);
+  if (fscanf(f,"h %35s\n",buf)==1) {
+    if (!irc_hostset) {
+      strcpy(irc_hostname,buf);
+    }
+  }
+  fscanf(f,"a %9s %9s\n",usrname[0],usrname[1]);
+  fscanf(f,"a %9s %9s\n",conames[0][0],conames[0][1]);
+  fscanf(f,"a %9s %9s\n",conames[1][0],conames[1][1]);
   fclose(f);
 }
 
@@ -1801,6 +1872,13 @@ VOID save_opt()
   fprintf(f,"b %d %d %d\n",briefmsg[0],briefmsg[1],briefmsg[2]);
   fprintf(f,"l %d %d %d\n",trickl2r[0],trickl2r[1],trickl2r[2]);
   fprintf(f,"s %d\n",rskatloser);
+  fprintf(f,"d 1\n");
+  fprintf(f,"l %s %s %s\n",lanip[0],lanip[1],lanip[2]);
+  fprintf(f,"i %d %d\n",laninvite[0],laninvite[1]);
+  fprintf(f,"h %s\n",irc_hostname);
+  fprintf(f,"a %s %s\n",usrname[0],usrname[1]);
+  fprintf(f,"a %s %s\n",conames[0][0],conames[0][1]);
+  fprintf(f,"a %s %s\n",conames[1][0],conames[1][1]);
   fclose(f);
 }
 
@@ -2104,6 +2182,13 @@ int ignorieren()
     }
     if (k[i]) return 0;
   }
+  if (stich>7) {
+    for (i=0;i<possc;i++) {
+      if (cards[possi[i]]>>3==fb && (cards[possi[i]]&7)!=BUBE) {
+	if (!higher(stcd[0],cards[possi[i]])) return 0;
+      }
+    }
+  }
   return ih<3;
 }
 
@@ -2112,7 +2197,46 @@ int genugdrin()
   return
     (stcd[0]>>3==cards[possi[0]]>>3 && (cards[possi[0]]&7)!=BUBE) ||
       (trumpf!=4 && cardw[stcd[0]&7]+cardw[stcd[1]&7]>0) ||
-	cardw[stcd[0]&7]+cardw[stcd[1]&7]>4;
+	cardw[stcd[0]&7]+cardw[stcd[1]&7]>3+rnd(1);
+}
+
+int gewinnstich(f)
+int f;
+{
+  int i,p,s,g,ci,sf,su;
+
+  s=f?astsum:gstsum;
+  sf=0;
+  if (f) {
+    if (schnang || spitzeang || stich<6 || s>60) return 0;
+  }
+  else {
+    if (s>59) return 0;
+    if (s<30) {
+      su=cardw[prot2.skat[0][0]&7]+cardw[prot2.skat[0][1]&7]+
+	cardw[stcd[0]&7]+cardw[stcd[1]&7];
+      for (i=0;i<30;i++) {
+	if (cards[i]>=0) su+=cardw[cards[i]&7];
+      }
+      if (su+s<60) sf=1;
+    }
+  }
+  p=!higher(stcd[0],stcd[1]);
+  g=!f && (spieler==ausspl)^!p;
+  for (i=0;i<possc;i++) {
+    ci=cards[possi[i]];
+    if (!higher(stcd[p],ci) || g) {
+      if (s+cardw[ci&7]+cardw[stcd[0]&7]+cardw[stcd[1]&7]>59+f) {
+	playcd=i;
+	return 1;
+      }
+      if (sf && s+cardw[ci&7]+cardw[stcd[0]&7]+cardw[stcd[1]&7]>30) {
+	playcd=i;
+	return 1;
+      }
+    }
+  }
+  return 0;
 }
 
 int uebernehmen(p,h,n)
@@ -2281,6 +2405,36 @@ int ueberdoerfer()
   return 0;
 }
 
+int bubeausspielen()
+{
+  int i,c;
+
+  c=-1;
+  calc_inhand(spieler);
+  if (inhand[3][BUBE] && inhand[2][BUBE] && inhand[1][BUBE]) {
+    c=rnd(1)?1:rnd(1)?2:3;
+  }
+  else if (inhand[3][BUBE] && inhand[2][BUBE]) {
+    c=rnd(1)?3:2;
+  }
+  else if (inhand[3][BUBE] && inhand[1][BUBE]) {
+    c=rnd(7)?3:1;
+  }
+  else if (inhand[2][BUBE] && inhand[1][BUBE]) {
+    c=rnd(1)?2:1;
+  }
+  if (c>=0) {
+    c=c<<3|BUBE;
+    for (i=0;i<possc;i++) {
+      if (cards[possi[i]]==c) {
+	playcd=i;
+	return 1;
+      }
+    }
+  }
+  return 0;
+}
+
 int trumpfausspielen()
 {
   int i,j,k,g1,g2,tr,trdr,wi,wj;
@@ -2289,6 +2443,7 @@ int trumpfausspielen()
   g2=right(spieler);
   if (!hatnfb[g1][trumpf] ||
       !hatnfb[g2][trumpf]) {
+    if (trumpf!=4 && bubeausspielen()) return 1;
     if (niedrighoch(trumpf)) return 1;
   }
   if (trumpf==4 &&
@@ -2619,7 +2774,7 @@ int buttern()
 	 gespcd[0<<3|BUBE]==2 &&
 	 gespcd[1<<3|BUBE]==2 &&
 	 gespcd[2<<3|BUBE]==2 &&
-	 gespcd[3<<3|BUBE]==2) ||
+	 gespcd[3<<3|BUBE]==2 && rnd(1)) ||
 	((stcd[0]&7)==BUBE && gespcd[2<<3|BUBE]==2 && gespcd[3<<3|BUBE]!=2) ||
 	higher(stcd[0],high[fb]) ||
 	(hatnfb[mi][fb]==1 && hatnfb[mi][trumpf]==1) ||
@@ -2628,9 +2783,9 @@ int buttern()
 	  gespcd[1<<3|BUBE]==2 ||
 	  gespcd[2<<3|BUBE]==2 ||
 	  gespcd[3<<3|BUBE]==2)) ||
-	cardw[stcd[0]&7]>4) return 0;
-    if (butternok) return 0;
-    butternok=1;
+	(cardw[stcd[0]&7]>4 && rnd(1))) return 0;
+    if (butternok) return rnd(1);
+    butternok=rnd(1);
     return 1;
   }
   if (higher(stcd[0],high[trumpf]) && higher(stcd[0],high[fb])) return 1;
@@ -2731,9 +2886,25 @@ int restbeimir()
   s[0]=left(spieler);
   s[1]=right(spieler);
   if (!hatnfb[s[0]][trumpf] ||
-      !hatnfb[s[1]][trumpf]) return 0;
+      !hatnfb[s[1]][trumpf]) {
+    if (trumpf==4) return 0;
+    h=-1;
+    for (k=0;k<10;k++) {
+      if ((c=cards[spieler*10+k])>=0) {
+	if (c>>3!=trumpf && (c&7)!=BUBE) return 0;
+	if (h<0 || !higher(c,cards[spieler*10+h])) h=k;
+      }
+    }
+    for (j=0;j<2;j++) {
+      for (k=handsp?-1:0;k<10;k++) {
+	if ((c=k<0?prot2.skat[0][j]:cards[s[j]*10+k])>=0 &&
+	    higher(c,cards[spieler*10+h])) return 0;
+      }
+    }
+    return 1;
+  }
   for (i=0;i<4;i++) {
-    if (i==trumpf) continue;
+    if (i==trumpf || (hatnfb[s[0]][i] && hatnfb[s[1]][i])) continue;
     h=SIEBEN+1;
     for (j=0;j<2;j++) {
       for (k=handsp?-1:0;k<10;k++) {
@@ -2763,6 +2934,7 @@ VOID m_bmsp()
 
 VOID m_bhsp()
 {
+  if (gewinnstich(1)) return;
   if (fabwerfen()) return;
   if (!uebernehmen(!higher(stcd[0],stcd[1]),1,0)) schenke();
 }
@@ -2779,7 +2951,8 @@ VOID m_bmns()
   if (spitzefangen()) return;
   if (karobubespielen()) return;
   if (spieler==ausspl) {
-    if (schnippeln(0) || (!ignorieren() && uebernehmen(0,1,0))) return;
+    if ((rnd(3) && schnippeln(0)) ||
+	(!ignorieren() && uebernehmen(0,1,0))) return;
   }
   else {
     if (einstechen() || hatas()) return;
@@ -2790,9 +2963,10 @@ VOID m_bmns()
 
 VOID m_bhns()
 {
+  if (gewinnstich(0)) return;
   if (spitzefangen()) return;
-  if (karobubespielen()) return;
-  if (schnippeln(1)) return;
+  if (rnd(1) && karobubespielen()) return;
+  if (rnd(3) && schnippeln(1)) return;
   if (higher(stcd[0],stcd[1])^(spieler!=ausspl)) {
     if (!genugdrin() || !uebernehmen(spieler!=ausspl,1,0)) abwerfen();
   }
