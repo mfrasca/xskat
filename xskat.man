@@ -1,0 +1,922 @@
+.\" -*- nroff -*-
+.\"
+.\" xskat \- a card game for 1 to 3 players.
+.\" Copyright (C) 1998  Gunter Gerhardt
+.\"
+.\" This program is free software; you can redistribute it freely.
+.\" Use it at your own risk; there is NO WARRANTY.
+.\"
+.TH XSKAT 6 "November 1998"
+.SH NAME
+xskat \- a card game for 1 to 3 players.
+.SH SYNOPSIS
+.B xskat
+.RB [ \-display | \-d
+.IR display ]
+.RB [ \-geometry | \-g
+.IR geometry ]
+.RB [ \-font | \-fn
+.IR font ]
+.RB [ \-iconic | \-i ]
+.RB [ \-title | \-T
+.IR string ]
+.RB [ \-name
+.IR prog ]
+.RB [ \-fg
+.IR color ]
+.RB [ \-bg
+.IR color ]
+.RB [ \-bt
+.IR color ]
+.RB [ \-mark
+.IR color ]
+.RB [ \-3d ]
+.RB [ \-2d ]
+.RB [ \-3dtop
+.IR color ]
+.RB [ \-3dbot
+.IR color ]
+.RB [ \-mb
+.IR button# ]
+.RB [ \-tdelay
+.IR sec ]
+.RB [ \-fastdeal ]
+.RB [ \-slowdeal ]
+.RB [ \-help | \-h ]
+.RB [ \-color ]
+.RB [ \-mono ]
+.RB [ \-color1
+.IR color ]
+.RB ".." " " [ \-color20
+.IR color ]
+.RB [ \-large ]
+.RB [ \-small ]
+.RB [ \-up ]
+.RB [ \-down ]
+.RB [ \-alt ]
+.RB [ \-seq ]
+.RB [ \-list | \-l
+.IR file ]
+.RB [ \-alist ]
+.RB [ \-nlist ]
+.RB [ \-tlist ]
+.RB [ \-log
+.IR file ]
+.RB [ \-dolog ]
+.RB [ \-nolog ]
+.RB [ \-fmt ]
+.RB [ \-unfmt ]
+.RB [ \-game
+.IR file ]
+.RB [ \-lang
+.IR language ]
+.RB [ \-start
+.IR player# ]
+.RB [ \-s1
+.IR number ]
+.RB [ \-s2
+.IR number ]
+.RB [ \-s3
+.IR number ]
+.RB [ \-ramsch ]
+.RB [ \-noramsch ]
+.RB [ \-ramschonly ]
+.RB [ \-sramsch ]
+.RB [ \-nosramsch ]
+.RB [ \-kontra ]
+.RB [ \-nokontra ]
+.RB [ \-kontra18 ]
+.RB [ \-bock ]
+.RB [ \-nobock ]
+.RB [ \-bockramsch ]
+.RB [ \-bockevents
+.IR number ]
+.RB [ \-resumebock ]
+.RB [ \-noresumebock ]
+.RB [ \-spitze ]
+.RB [ \-spitze2 ]
+.RB [ \-nospitze ]
+.RB [ \-revolution ]
+.RB [ \-norevolution ]
+.RB [ \-klopfen ]
+.RB [ \-noklopfen ]
+.RB [ \-schenken ]
+.RB [ \-noschenken ]
+.RB [ \-hint ]
+.RB [ \-nohint ]
+.RB [ \-irc ]
+.RB [ \-noirc ]
+.RB [ \-irctelnet
+.IR program ]
+.RB [ \-ircserver
+.IR hostname ]
+.RB [ \-ircport
+.IR number ]
+.RB [ \-ircchannel
+.IR name ]
+.RB [ \-ircnick
+.IR name ]
+.RB [ \-ircuser
+.IR name ]
+.RB [ \-ircrealname
+.IR name ]
+.RB [ \-ircpos
+.IR number ]
+.RB [ \-irclog
+.IR file ]
+.RB [ \-auto
+.IR #ofgames ]
+.RB [ \-opt
+.IR file ]
+.RI [ player\fB@\fIdisplay... ]
+.SH DESCRIPTION
+.B XSkat
+lets you play the card game Skat
+as defined by the official German Skatordnung.
+.PP
+Up to 3 players may be simulated by the computer.
+.PP
+After starting the game a mouse click will bring up a menu.
+The rest of the game controls should be fairly obvious.
+.SH OPTIONS
+In the following descriptions, the player starting
+.B XSkat
+is called player1.
+.TP
+.PD 0
+.BI \-display " display name"
+.TP
+.PD 0
+.BI \-geometry " geometry specification"
+.TP
+.PD 0
+.BI \-font " font name" " \fR(default: 9x15 or 10x20)"
+.TP
+.PD 0
+.B \-iconic
+.TP
+.PD 0
+.BI \-title " window title"
+.TP
+.PD 0
+.BI \-name " application resource name"
+.TP
+.PD 0
+.BI \-fg " foreground color"
+.TP
+.PD
+.BI \-bg " background color"
+The usual X toolkit options.
+.TP
+.BI \-bt " color"
+The color of dialog buttons.
+.TP
+.BI \-mark " color"
+The color of the marks that indicate who is
+forehand (during bidding) or who is the Soloist
+or which card the computer would play (default: red or black).
+.TP
+.B \-3d
+Use a 3D look for dialogs (default).
+.TP
+.B \-2d
+Use the old flat style (default on monochrome screens).
+.TP
+.BI \-3dtop " color"
+The color used for the lines around the top and left sides of 3D buttons
+(default: white).
+.TP
+.BI \-3dbot " color"
+The color used for the lines around the bottom and right sides of 3D buttons
+(default: black).
+.TP
+.BI \-mb " menu button"
+The number of the mouse button that brings up the menu
+(default: 0 = any button).
+.TP
+.BI \-tdelay " seconds"
+Specifies how long the last trick will be visible.
+A delay of more than 10 seconds means that the trick will be
+removed after pressing a mouse button.
+In multiplayer mode the largest specified value is used
+(default: 0.7).
+.TP
+.BI \-fastdeal
+Deal the cards without any time consuming animation.
+.TP
+.BI \-slowdeal
+Deal the cards slowly (default).
+.TP
+.B \-help
+Show a short help text
+.TP
+.B \-color
+Use colored cards (default for color displays).
+.TP
+.B \-mono
+Use b&w cards (default for grayscale displays
+or if there are not enough colors left).
+.TP
+.BR \-color1 " .. " \-color20
+Redefine colors.
+The first 4 colors are used for the suits diamond, heart, spade and club.
+.TP
+.BR \-large " and " \-small
+Select the size of the main window (default: as large as possible).
+.TP
+.B \-down
+Sort cards downwards (default).
+.TP
+.B \-up
+Sort cards upwards.
+.TP
+.B \-alt
+Sort cards in alternating order (default).
+.TP
+.B \-seq
+Sort cards in sequential order.
+.TP
+.BI \-list " filename"
+The file for saving/restoring the game list
+(default: $HOME/.xskat.lst or ./xskat.lst if HOME isn't set.
+For IRC games: .irc instead of .lst).
+.TP
+.B \-alist
+Alternative form of listing.
+.TP
+.B \-nlist
+Normal form of listing (default).
+.TP
+.B \-tlist
+Listing with tournament scoring.
+.TP
+.BI \-log " filename"
+Turn on automatic logging,
+i.e. append logs of all games to
+.I filename
+(\- means stdout).
+.TP
+.B \-dolog
+Turn on automatic logging
+(default file: $HOME/.xskat.log or ./xskat.log).
+.TP
+.B \-nolog
+Turn off automatic logging (default).
+Logs of individual games may still be saved during the game.
+.TP
+.B \-fmt
+Write formatted log files, i.e. use backspaces for underlining and boldface.
+.TP
+.B \-unfmt
+Write unformatted log files (default).
+.TP
+.BI \-game " filename"
+Read predefined games from
+.I filename
+(\- means stdin).
+Not available for IRC play.
+See also section FILES below.
+.TP
+.BI \-lang " language"
+Currently available: english and german (default: see Imakefile/Makefile).
+.TP
+.BI \-start " number"
+The player who starts dealing cards (default: 2).
+.TP
+.PD 0
+.BI \-s1 " number"
+.TP
+.PD 0
+.BI \-s2 " number"
+.TP
+.PD
+.BI \-s3 " number"
+Change the strategy used by the computer players.
+.br
+.B s1
+corresponds to the left computer in single player mode
+or to the one and only computer in two player mode.
+.br
+.B s2
+corresponds to the right computer in single player mode.
+.br
+.B s3
+is only useful with
+.BR \-auto .
+.br
+The number must be between \-4 and 4 and has the following meaning:
+.nf
+\-4 : computer likes to pass.
+ 0 : normal behavior (default).
+ 4 : computer tends to say at least 18.
+.fi
+.TP
+.B \-ramsch
+Play a game of Ramsch when all players pass.
+.br
+The following rules are currently implemented:
+.br
+The Skat remains face down until it goes to the winner of the last trick.
+The amount lost is the number of card points taken.
+If two players tie for most card points, they both lose.
+If all tie, the score is 0.
+If one player takes no tricks (a virgin)
+the amount lost by the loser is doubled.
+Someone taking all the tricks (forced march) wins 120 points.
+.TP
+.B \-noramsch
+Don't play Ramsch (default).
+.TP
+.B \-ramschonly
+Play Ramsch each game.
+.TP
+.B \-sramsch
+Play Schieberamsch instead of simple Ramsch.
+.br
+The rules are:
+.br
+Each player in turn, starting with Forehand, may pick up the Skat
+and discard two cards face down.
+It's not allowed to pass on jacks.
+The score is doubled each time a player doesn't pick up the Skat.
+.TP
+.B \-nosramsch
+Don't play Schieberamsch (default).
+.TP
+.B \-kontra
+Allow opponents to say 'Kontra' which doubles the score of the game.
+The Soloist may reply 'Re' to double the score again.
+.TP
+.B \-nokontra
+Disallow Kontra (default).
+.TP
+.B \-kontra18
+Only an opponent who said at least 18 may say 'Kontra'.
+.TP
+.B \-bock
+Play a Bockround after some special event.
+The score is doubled in the next 3 games.
+If an event causing a new Bockround happens before the current Bockround
+is over or several Bockround events happen at the same time,
+the number of Bockrounds still to play is increased appropriately.
+.TP
+.B \-nobock
+Don't play Bockrounds (default).
+.TP
+.B \-bockramsch
+Play a round of compulsory Ramsch after each Bockround.
+Before a game of Ramsch begins, each player in turn, starting with Forehand,
+may declare to play Grand Hand instead.
+After a Grand Hand the same player deals again
+because this game does not count towards completing the Ramschround.
+.TP
+.BI \-bockevents " number"
+Specify the events that cause a Bockround.
+.br
+(1) A game is lost with 60 points.
+.br
+(2) A successful Grand Hand.
+.br
+(4) A successful Kontra (opponents win).
+.br
+(8) A game with Kontra & Re.
+.br
+(16) A player's score ends in 3 equal digits.
+.br
+(32) A player's score is a multiple of 100.
+.br
+(64) A game value of +72 or more.
+.br
+(128) A game value of +96 or more.
+.br
+Add up the numbers in parentheses to specify the
+desired events (default: 0).
+.br
+Notes:
+.br
+A Kontra where the Soloist said Re but lost counts
+as one event not two (events 4 and 8).
+.br
+To check a player's score, the current listing options of player1 are used
+(events 16 and 32).
+A score that is a multiple of 1000 counts as one event.
+.br
+The game value (events 64 and 128) is the normal value
+without considering any doubling caused by Ramsch, Kontra or Bock.
+.TP
+.B \-resumebock
+Resume unfinished Bockrounds after quitting and restarting
+.BR XSkat .
+The number of games to play is read from the game list file.
+.TP
+.B \-noresumebock
+Don't resume Bockrounds (default).
+.TP
+.B \-spitze
+Allow the Soloist to declare Spitze.
+This means that the last trick must be made with the lowest trump
+to win the game.
+This will be indicated to the other players by displaying the lowest trump.
+The game multiplier is increased by 1.
+It's not allowed to say Spitze in a Grand with 4 jacks.
+.TP
+.B \-spitze2
+Declaring Spitze increases the multiplier by 2.
+.TP
+.B \-nospitze
+Don't allow Spitze (default).
+.TP
+.B \-revolution
+Enable a special variation of Null ouvert.
+After the Soloist's cards are exposed the opponents can look at
+each other's cards and rearrange the cards between their two hands
+in any way they wish before the start of the play.
+Revolution is worth 92 points.
+.TP
+.B \-norevolution
+Don't allow Revolution (default).
+.TP
+.B \-klopfen
+During a Ramschround you may knock (klopfen) at the beginning of a game
+to indicate that you think you won't lose.
+This will double the score of the game.
+Klopfen is not possible if you don't pick up the Skat
+in Schieberamsch.
+.TP
+.B \-noklopfen
+Don't allow Klopfen (default).
+.TP
+.B \-schenken
+If the opponents decide at the start of the play that they cannot defeat
+the Soloist, they can give up.
+This is done by selecting Schenken from the main menu during the first trick
+when it's your turn.
+If the Soloist accepts, the score is as though the game was won simply.
+The Soloist can insist on playing on, but in that case has to make
+the opponents Schneider to win.
+The score in this case is as for an announced Schneider
+(the multiplier is increased by 2).
+If the Soloist goes on the opponents can schenken again,
+giving the Soloist the Schneider.
+The Soloist can accept Schneider or insist on playing on for Schwarz.
+.TP
+.B \-noschenken
+Don't allow Schenken (default).
+.TP
+.B \-hint
+Put a mark over the card the computer would play.
+.TP
+.B \-nohint
+Don't show computer hints (default).
+.TP
+.B \-irc
+Play via Internet Relay Chat.
+This option will establish a connection to an IRC server
+where you can join other people for a game of Skat.
+.br
+How it works:
+.br
+Start
+.B XSkat
+from an xterm. Wait until the server has printed the welcome message.
+You are now on channel #xskat where new games should be planned.
+Everything you type into the xterm will be sent to everyone else
+on this channel. After you have found one or two other players
+and agreed upon the name of a new channel (say #xskat123),
+you should type
+.BR /join " #xskat123."
+When all players are on the new channel,
+exactly one player has to type
+.BR /go " (or " /go2
+if there are only 2 players) to start the game. Now you can play and talk.
+.TP
+.B \-noirc
+Don't use IRC (default).
+.TP
+.BI \-irctelnet " program"
+Specify the program that will be used to connect to the IRC server.
+If you are sitting behind a firewall, a program like rtelnet must be used
+and you may have to set $SOCKS_SERVER to the name
+of your firewall host (default: telnet).
+.TP
+.BI \-ircserver " hostname"
+Select an IRC server near you! (default: $IRCSERVER
+or irc.uni-paderborn.de, if not changed in the Imakefile/Makefile)
+.TP
+.BI \-ircport " number"
+The port of the IRC server to connect to (default: $IRCPORT or 6667).
+.TP
+.BI \-ircchannel " name"
+The channel to join initially (default: #xskat).
+.TP
+.BI \-ircnick " name"
+Your IRC nickname. If your nick is already used by someone else,
+a different nick will be generated automatically.
+Some servers allow a nick length of 30, others limit it to 9 characters.
+(default: $IRCNICK or $IRCUSER or $LOGNAME or xskatNNNN).
+.TP
+.BI \-ircuser " name"
+Your user/login name. Note: most servers don't like faked user names
+(default: $IRCUSER or $LOGNAME).
+.TP
+.BI \-ircrealname " name"
+Your real name (default: $IRCNAME or the entry from the passwd file
+or 'XSkat player').
+.TP
+.BI \-ircpos " number"
+Select your position relative to the other players. Positions are numbered
+clockwise 1, 2 and 3. Player 2 will start dealing
+if not specified otherwise with
+.BR \-start " or " /start .
+If you don't specify your position or there is a conflict with someone
+else's choice or you give an invalid number (3 in a 2 player game),
+this will be fixed automatically. Choosing the right positions is
+important if you want to continue with a saved game list
+(default: 0 = I don't care).
+.TP
+.BI \-irclog " file"
+Everything sent to or received from the IRC server is saved to this file
+(\- means stdout).
+It may be useful for debugging
+(default: $HOME/.xskat.ilg or ./xskat.ilg if HOME isn't set).
+.TP
+.B IRC commands:
+.br
+.BR /nick " name, " /nick
+\- change or display your nickname.
+.br
+.B /who
+\- is on the current channel ?
+.br
+.B /list, /list string
+\- show all channels that match the word xskat or the specified string.
+This will take some time on networks with a large number of channels.
+Trying to stop the listing will terminate the program.
+.br
+.BR /pos " number \- see " \-ircpos .
+.br
+.B /bell
+\- toggle the alarm bell. When on, the bell will ring each time someone
+joins your channel or sends a message to you.
+The bell is off initially.
+.br
+.B /sync
+\- if messages get lost due to a netsplit (or because someone left the
+channel during play),
+.B XSkat
+will detect this and in most cases should be able to synchronize
+automatically (within 30 seconds) after the connection is reestablished.
+Typing
+.B /sync
+will try this immediately.
+.br
+.BR /quote " command args"
+\- for those who know what they are doing.
+.br
+The following commands are only useful for the player
+who will start the game by typing
+.B /go
+because that player will determine the rules of the game.
+.br
+.B /default
+\- set the official rules.
+.br
+.B /ramsch, /sramsch, /kontra, /bock, /resumebock,
+.B /spitze, /revolution, /klopfen, /schenken,
+.B /bockevents, /alist, /tlist, /start, /s1
+\- change the rules of the game.
+All of these require an argument (a number or True/False) just like
+the resources with the same name.
+.br
+.B /rules
+\- show the current rules to everyone on your channel.
+.TP
+.B Notes:
+The IRC version numbers of all participating programs must be equal.
+The version is displayed during startup.
+.br
+Most options cannot be changed during the game.
+Options that can be changed are not saved to a file.
+.br
+The game list can only be cleared during bidding or when it's your turn
+to play a card.
+There is a different default game list for IRC games (see
+.BR \-list ).
+.br
+It's possible to type into the xterm or the game window,
+but changing input sources in the middle of a line won't work.
+.br
+You can omit
+.B \-irc
+when you specify any of the other IRC options.
+.TP
+.BI \-auto " #ofgames"
+Three computers play the specified number of games without human interaction.
+The resulting scores are printed.
+.br
+With this option, no resources are read,
+and the game list is saved only if
+.B \-list
+is specified.
+.TP
+.BI \-opt " filename"
+The file for saving/restoring all interactively changeable options
+of all players
+(default: $HOME/.xskat.opt or ./xskat.opt if HOME isn't set).
+Command line options take precedence over
+options specified in this file which in turn override
+resource specifications.
+This may be changed with the
+.B useoptfile
+resource.
+.TP
+.IB player @ display
+Specifies the display of the second and third player
+(but ignored for IRC games).
+The
+.IB player @
+part may be omitted if the
+.B alias
+resource is set on
+.IR display .
+.SH RESOURCES
+.PP
+Command line options take precedence over resource specifications
+for player1.
+.TP
+.B font, title, foreground, background
+The usual X resources.
+.TP
+.B mark
+(see
+.BR \-mark ).
+.TP
+.B button
+(used for 2D buttons, see
+.BR \-bt ).
+.TP
+.B 3dbutton
+(used for 3D buttons, see
+.BR \-bt ,
+default: a shade of gray).
+.TP
+.B 3dbackground
+(used for 3D dialogs, see
+.BR \-bg ,
+default: a different shade of gray).
+.TP
+.B 3d
+True or False (see
+.BR \-3d " and " \-2d ).
+.TP
+.B 3dtop
+(see
+.BR \-3dtop ).
+.TP
+.B 3dbot
+(see
+.BR \-3dbot ).
+.TP
+.B menubutton
+(see
+.BR \-mb ).
+.TP
+.B tdelay
+(see
+.BR \-tdelay ).
+.TP
+.B fastdeal
+True or False (see
+.BR \-fastdeal " and " \-slowdeal ).(#)
+.TP
+.B color
+True or False (see
+.BR \-color " and " \-mono ).
+.TP
+.B color1 .. color20
+(see
+.BR \-color1 " .. " \-color20 ).
+.TP
+.B large
+True or False (see
+.BR \-large " and " \-small ).
+.TP
+.B down
+True or False (see
+.BR \-down " and " \-up ).
+.TP
+.B alt
+True or False (see
+.BR \-alt " and " \-seq ).
+.TP
+.B list
+(see
+.BR \-list ).(#)
+.TP
+.B alist
+True or False (see
+.BR \-alist " and " \-nlist ).
+.TP
+.B tlist
+True or False (see
+.BR \-tlist " and " \-nlist ).
+.TP
+.B log
+(see
+.BR \-log ).(#)
+.TP
+.B dolog
+True or False (see
+.BR \-dolog " and " \-nolog ).(#)
+.TP
+.B formatted
+True or False (see
+.BR \-fmt " and " \-unfmt ).(#)
+.TP
+.B game
+(see
+.BR \-game ).(#)
+.TP
+.B language
+(see
+.BR \-lang ).(#)
+.TP
+.B start
+(see
+.BR \-start ).(#)
+.TP
+.B s1, s2
+(see
+.BR \-s1 ", " \-s2 ).(#)
+.TP
+.B ramsch
+0, 1 or 2 (see
+.BR \-noramsch ", " \-ramsch " and " \-ramschonly ).(#)
+.TP
+.B sramsch
+True or False (see
+.BR \-sramsch " and " \-nosramsch ).(#)
+.TP
+.B kontra
+0, 1 or 2 (see
+.BR \-nokontra ", " \-kontra " and " \-kontra18 ).(#)
+.TP
+.B bock
+0, 1 or 2 (see
+.BR \-nobock ", " \-bock " and " \-bockramsch ).(#)
+.TP
+.B bockevents
+(see
+.BR \-bockevents ).(#)
+.TP
+.B resumebock
+True or False (see
+.BR \-resumebock " and " \-noresumebock ).(#)
+.TP
+.B spitze
+0, 1 or 2 (see
+.BR \-nospitze ", " \-spitze " and " \-spitze2 ).(#)
+.TP
+.B revolution
+True or False (see
+.BR \-revolution " and " \-norevolution ).(#)
+.TP
+.B klopfen
+True or False (see
+.BR \-klopfen " and " \-noklopfen ).(#)
+.TP
+.B schenken
+True or False (see
+.BR \-schenken " and " \-noschenken ).(#)
+.TP
+.B hint
+True or False (see
+.BR \-hint " and " \-nohint ).(#)
+.TP
+.B irc
+True or False (see
+.BR \-irc " and " \-noirc ).(#)
+.TP
+.B irctelnet
+(see
+.BR \-irctelnet ).(#)
+.TP
+.B ircserver
+(see
+.BR \-ircserver ).(#)
+.TP
+.B ircport
+(see
+.BR \-ircport ).(#)
+.TP
+.B ircchannel
+(see
+.BR \-ircchannel ).(#)
+.TP
+.B ircnick
+(see
+.BR \-ircnick ).(#)
+.TP
+.B ircuser
+(see
+.BR \-ircuser ).(#)
+.TP
+.B ircrealname
+(see
+.BR \-ircrealname ).(#)
+.TP
+.B ircpos
+(see
+.BR \-ircpos ).(#)
+.TP
+.B irclist
+(see
+.BR \-list ).(#)
+.TP
+.B irclog
+(see
+.BR \-irclog ).(#)
+.TP
+.B opt
+(see
+.BR \-opt ).(#)
+.TP
+.B useoptfile
+True or False (default: False).
+This is a resource for multiplayer mode (but not for IRC).
+It is ignored for player1.
+If set to True, the contents of the option file,
+which is owned by player1,
+are used.
+This means that you may end up with someone else's preferred settings
+if player1 used this file in a different multiplayer game.
+.TP
+.B alias
+The player's real name (max. 2 words of 9 characters, default: $LOGNAME).
+.PP
+Only player1 may specify the resources marked with (#).
+.PP
+Filenames starting with ~/ are interpreted correctly if HOME is set.
+.SH FILES
+An example of a file specifying predefined games:
+.nf
+
+.ne 7
+# The following block specifies the distribution
+# of cards for player1, 2, 3 and Skat(0).
+# A 10  K  Q  J  9  8  7
+  2  2  2  2  2  0  3  3  # Diamond
+  2  2  2  2  2  3  3  3  # Heart
+  1  1  1  1  1  3  3  3  # Spade
+  1  1  1  1  1  0  3  3  # Club
+.ne 7
+# The following is not the same game !
+# Player numbers rotate 3 -> 2 -> 1 -> 3
+# (and depend on the start option).
+  2  2  2  2  2  0  3  3
+  2  2  2  2  2  3  3  3
+  1  1  1  1  1  3  3  3
+  1  1  1  1  1  0  3  3
+.ne 4
+repeat
+# Repeat the above games forever.
+# The following lines take effect only
+# when you delete the 'repeat'.
+.ne 9
+random_seed 123456 0
+# Specifies the random number which determines
+# card distribution for all following games.
+# The second number lets you skip that many
+# games in the sequence.
+# An optional L or R following this number will
+# rotate the cards left or right.
+# The random_seed will be shown in game logs
+# to allow easy replay.
+.fi
+.SH NOTES
+There are no official rules for the variations Ramsch, Kontra, Bock,
+Spitze, Revolution, Klopfen and Schenken.
+.PP
+If executing
+.BR "xskat player@otherhost:0" " on " yourhost
+gives an error message you could try the command
+.BR "xhost yourhost" " on " otherhost
+to grant
+.B yourhost
+access to
+.BR otherhost "'s "
+display.
+.PP
+If you replay a game with your own cards, it doesn't matter
+whether 'Forehand changes' is set to 'yes' or 'no'.
+.SH AUTHOR
+Gunter Gerhardt (gerhardt@draeger.com)
+.PP
+The latest version is always available first at
+.br
+ftp://sunsite.unc.edu/pub/Linux/Incoming/ and then at
+.br
+ftp://sunsite.unc.edu/pub/Linux/games/multiplayer/cards/
+.PP
+This program is free software; you can redistribute it freely.
+Use it at your own risk; there is NO WARRANTY.

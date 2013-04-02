@@ -1,0 +1,43 @@
+
+Changes in 3.0:
+ - Playing via Internet Relay Chat supported
+ - Computer can suggest a card to play
+ - Shortcut possible in all games
+ - 3D look
+
+Changes in 2.3:
+ - More variations: Spitze, Revolution, Klopfen, Schenken
+ - Shortcut possible when Null is safe
+ - Configurable dealing speed
+ - Computer can say Kontra and Re
+ -  knows when to play Null ouvert
+ - Other minor computer play improvements
+
+Changes in 2.2:
+ - Bock- and Ramschrounds implemented
+ - Interactively changeable options are saved
+ - Enhanced replay function
+ - Null and Ramsch improved
+
+Changes in 2.1:
+ - Kontra and Re
+ - Schieberamsch implemented
+ - Immediate replay in single player mode
+ - Trick delay changeable during the game
+ - Improved computer players
+
+Changes in 2.0:
+ - It's possible to play Ramsch
+ - Configurable delay after each trick
+ - ~/ is allowed in filenames
+
+Changes in 1.7:
+ - Improved computer players
+ - Selectable computer strategy
+ - Large cards for large displays
+ - Configurable menu mouse button
+ - Optional tournament scoring
+ - Formatted and unformatted logs
+ - Proportional fonts work
+ - Redefinable card colors
+ - Computer player only mode
