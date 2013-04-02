@@ -32,6 +32,9 @@ SRCS=skat.c ramsch.c null.c bitmaps.c xio.c xdial.c irc.c text.c
 
 ComplexProgramTarget(xskat)
 
+/* If you don't need the German man page, delete the next line */
+InstallManPage(xskat-de,$(MANDIR))
+
 ckdef:
 	@echo Checking defs.h;\
 	sed -n "1,/######/p" defs.h > defs;\

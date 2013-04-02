@@ -1,0 +1,1152 @@
+.\" -*- nroff -*-
+.\"
+.\" xskat - a card game for 1 to 3 players.
+.\" Copyright (C) 2000  Gunter Gerhardt
+.\"
+.\" This program is free software; you can redistribute it freely.
+.\" Use it at your own risk; there is NO WARRANTY.
+.\"
+.\" Redistribution of modified versions is permitted
+.\" provided that the following conditions are met:
+.\" 1. All copyright & permission notices are preserved.
+.\" 2.a) Only changes required for packaging or porting are made.
+.\"   or
+.\" 2.b) It is clearly stated who last changed the program.
+.\"      The program is renamed or
+.\"      the version number is of the form x.y.z,
+.\"      where x.y is the version of the original program
+.\"      and z is an arbitrary suffix.
+.\"
+.TH XSKAT 6 "Oktober 2000"
+.SH NAME
+xskat \- ein Kartenspiel für 1 bis 3 Spieler
+.SH SYNOPSIS
+.B xskat
+.RB [ \-display | \-d
+.IR Display ]
+.RB [ \-geometry | \-g
+.IR Geometrie ]
+.RB [ \-font | \-fn
+.IR Zeichensatz ]
+.RB [ \-iconic | \-i ]
+.RB [ \-title | \-T
+.IR Text ]
+.RB [ \-name
+.IR Programm ]
+.RB [ \-fg
+.IR Farbe ]
+.RB [ \-bg
+.IR Farbe ]
+.RB [ \-bt
+.IR Farbe ]
+.RB [ \-mark
+.IR Farbe ]
+.RB [ \-3d ]
+.RB [ \-2d ]
+.RB [ \-3dtop
+.IR Farbe ]
+.RB [ \-3dbot
+.IR Farbe ]
+.RB [ \-mb
+.IR Tastennummer ]
+.RB [ \-keyboard
+.IR Zahl ]
+.RB [ \-tdelay
+.IR Sekunden ]
+.RB [ \-fastdeal ]
+.RB [ \-slowdeal ]
+.RB [ \-help | \-h ]
+.RB [ \-frenchcards ]
+.RB [ \-french4cards ]
+.RB [ \-germancards ]
+.RB [ \-german4cards ]
+.RB [ \-color ]
+.RB [ \-mono ]
+.RB [ \-color1
+.IR Farbe ]
+.RB ".." " " [ \-color4
+.IR Farbe ]
+.RB [ \-large ]
+.RB [ \-small ]
+.RB [ \-up ]
+.RB [ \-down ]
+.RB [ \-alt ]
+.RB [ \-seq ]
+.RB [ \-list | \-l
+.IR Datei ]
+.RB [ \-alist ]
+.RB [ \-nlist ]
+.RB [ \-tlist ]
+.RB [ \-log
+.IR Datei ]
+.RB [ \-dolog ]
+.RB [ \-nolog ]
+.RB [ \-fmt ]
+.RB [ \-unfmt ]
+.RB [ \-game
+.IR Datei ]
+.RB [ \-briefmsg ]
+.RB [ \-verbosemsg ]
+.RB [ \-trickl2r ]
+.RB [ \-notrickl2r ]
+.RB [ \-lang
+.IR Sprache ]
+.RB [ \-start
+.IR Spielernummer ]
+.RB [ \-s1
+.IR Zahl ]
+.RB [ \-s2
+.IR Zahl ]
+.RB [ \-s3
+.IR Zahl ]
+.RB [ \-ramsch ]
+.RB [ \-noramsch ]
+.RB [ \-ramschonly ]
+.RB [ \-sramsch ]
+.RB [ \-nosramsch ]
+.RB [ \-skattolast ]
+.RB [ \-skattoloser ]
+.RB [ \-kontra ]
+.RB [ \-nokontra ]
+.RB [ \-kontra18 ]
+.RB [ \-bock ]
+.RB [ \-nobock ]
+.RB [ \-bockramsch ]
+.RB [ \-bockevents
+.IR Zahl ]
+.RB [ \-resumebock ]
+.RB [ \-noresumebock ]
+.RB [ \-spitze ]
+.RB [ \-spitze2 ]
+.RB [ \-nospitze ]
+.RB [ \-revolution ]
+.RB [ \-norevolution ]
+.RB [ \-klopfen ]
+.RB [ \-noklopfen ]
+.RB [ \-schenken ]
+.RB [ \-noschenken ]
+.RB [ \-hint ]
+.RB [ \-nohint ]
+.RB [ \-newrules ]
+.RB [ \-oldrules ]
+.RB [ \-shortcut ]
+.RB [ \-noshortcut ]
+.RB [ \-askshortcut ]
+.RB [ \-irc ]
+.RB [ \-noirc ]
+.RB [ \-irctelnet
+.IR Programm ]
+.RB [ \-ircserver
+.IR Name ]
+.RB [ \-ircport
+.IR Zahl ]
+.RB [ \-ircchannel
+.IR Name ]
+.RB [ \-ircnick
+.IR Name ]
+.RB [ \-ircuser
+.IR Name ]
+.RB [ \-ircrealname
+.IR Name ]
+.RB [ \-ircpos
+.IR Zahl ]
+.RB [ \-irclog
+.IR Datei ]
+.RB [ \-irclogappend ]
+.RB [ \-irclogoverwrite ]
+.RB [ \-auto
+.IR Zahl ]
+.RB [ \-opt
+.IR Datei ]
+.RI [ Spieler\fB@\fIDisplay... ]
+.SH BESCHREIBUNG
+.B XSkat
+ermöglicht es, das Kartenspiel Skat
+entsprechend der offiziellen Skatordnung zu spielen.
+.PP
+Bis zu 3 Spieler können vom Computer simuliert werden.
+.PP
+Nach dem Start des Spiels bringt ein Maus-Klick
+oder ESC/F1 ein Menü zur Anzeige.
+Andere nützliche Tasten sind:
+Leertaste, Eingabe, Tabulator, Cursor links/rechts/hoch/runter.
+Der Rest der Spielkontrollen sollte offensichtlich genug sein.
+.PP
+Eine Einführung in das Skatspiel gibt es unter
+.br
+http://www.gulu.net/xskat/ oder
+.br
+http://private.addcom.de/g/xskat/
+.SH OPTIONEN
+In den folgenden Beschreibungen wird der Spieler, der
+.B XSkat
+startet, Spieler1 genannt.
+.TP
+.PD 0
+.BI \-display " Displayname"
+.TP
+.PD 0
+.BI \-geometry " Geometrie-Spezifikation"
+.TP
+.PD 0
+.BI \-font " Zeichensatz" " \fR(Voreinstellung: 9x15 oder 10x20)"
+.TP
+.PD 0
+.B \-iconic
+.TP
+.PD 0
+.BI \-title " Fenstertitel"
+.TP
+.PD 0
+.BI \-name " Programm-Resourcename"
+.TP
+.PD 0
+.BI \-fg " Vordergrundfarbe"
+.TP
+.PD
+.BI \-bg " Hintergrundfarbe"
+Die üblichen Optionen des X Toolkit.
+.TP
+.BI \-bt " Farbe"
+Die Farbe der Tastenflächen.
+.TP
+.BI \-mark " Farbe"
+Die Farbe der Markierungen, die anzeigen,
+.br
+wer Vorhand ist (beim Reizen),
+.br
+wer Alleinspieler ist,
+.br
+welche Karte der Computer vorschlägt,
+.br
+oder wo der Tastatur-Fokus ist
+.br
+(Voreinstellung: Rot oder Schwarz).
+.TP
+.B \-3d
+Darstellung in 3D (Voreinstellung).
+.TP
+.B \-2d
+Verwende die alte, flache Darstellung
+(Voreinstellung für monochrome Bildschirme).
+.TP
+.BI \-3dtop " Farbe"
+Die Farbe, die für die linken und oberen Ränder der 3D-Tasten verwendet wird.
+(Voreinstellung: Weiß).
+.TP
+.BI \-3dbot " Farbe"
+Die Farbe, die für die rechten und unteren Ränder der 3D-Tasten verwendet wird.
+(Voreinstellung: Schwarz).
+.TP
+.BI \-mb " Tastennummer"
+Die Nummer der Maus-Taste, die das Menü öffnet
+(Voreinstellung: 0 = jede).
+.TP
+.BI \-keyboard " Zahl"
+Definiere, wieviel von der Benutzeroberfläche
+mit der Tastatur gesteuert werden kann.
+Die Zahl bedeutet:
+.nf
+.ne 3
+ 0 : Nichts.
+ 1 : Mehr (Voreinstellung).
+ 2 : Alles.
+.fi
+.TP
+.BI \-tdelay " Sekunden"
+Legt fest, wie lange der letzte Stich sichtbar bleibt.
+Eine Verzögerung von mehr als 10 Sekunden bedeutet,
+daß der Stich erst nach einem Maus-Klick entfernt wird.
+Im Mehrspieler-Modus wird der größte angegebene Wert verwendet
+(Voreinstellung: 0.7).
+.TP
+.BI \-fastdeal
+Gib die Karten ohne zeitraubende Animationen aus.
+.TP
+.BI \-slowdeal
+Gib die Karten langsam aus (Voreinstellung).
+.TP
+.B \-help
+Kurze Auflistung aller Optionen.
+.TP
+.B \-frenchcards
+Spiele mit Französischem Blatt (Voreinstellung).
+.TP
+.B \-french4cards
+Färbe zur leichteren Unterscheidbarkeit Karo orange und Pik grün.
+.TP
+.B \-germancards
+Verwende ein Deutsches Blatt.
+.TP
+.B \-german4cards
+Färbe zur leichteren Unterscheidbarkeit Eicheln braun.
+.TP
+.B \-color
+Benutze farbige Karten.
+Wenn nicht genug Farben verfügbar sind,
+wird die Farbanzahl entsprechend reduziert (Voreinstellung).
+.TP
+.B \-mono
+Benutze schwarz-weiße Karten.
+.TP
+.BR \-color1 " .. " \-color4
+Wähle die Farben für Karo, Herz, Pik und Kreuz.
+Die Angabe
+.B \-french4cards
+gewinnt bei Karo und Pik.
+.TP
+.BR \-large " und " \-small
+Wähle die Größe des Hauptfensters (Voreinstellung: so groß wie möglich).
+.TP
+.B \-down
+Sortiere Karten abwärts (Voreinstellung).
+.TP
+.B \-up
+Sortiere Karten aufwärts.
+.TP
+.B \-alt
+Sortiere Karten in alternierender Reihenfolge (Voreinstellung).
+.TP
+.B \-seq
+Sortiere Karten in sequentieller Reihenfolge.
+.TP
+.BI \-list " Dateiname"
+Die Datei zur Speicherung der Spielliste
+(Voreinstellung: $HOME/.xskat.lst oder ./xskat.lst,
+falls HOME nicht gesetzt ist.
+Für IRC-Spiele: .irc statt .lst).
+.TP
+.B \-alist
+Alternative Form der Listenführung.
+.TP
+.B \-nlist
+Normale Form der Listenführung (Voreinstellung).
+.TP
+.B \-tlist
+Liste mit Turnierzählung.
+.TP
+.BI \-log " Datei"
+Schalte automatische Protokollierung ein,
+d.h. Protokolle aller Spiele werden an die
+.I Datei
+(\- bedeutet Standard-Ausgabe) angehängt.
+.TP
+.B \-dolog
+Schalte automatische Protokollierung ein.
+(Voreingestellte Datei: $HOME/.xskat.log oder ./xskat.log).
+.TP
+.B \-nolog
+Schalte automatische Protokollierung aus (Voreinstellung).
+Protokolle einzelner Spiele können trotzdem noch gespeichert werden.
+.TP
+.B \-fmt
+Erzeuge formatierte Protokoll-Dateien,
+d.h. mit Unterstreichungen und Fettschrift.
+.TP
+.B \-unfmt
+Erzeuge unformatierte Protokoll-Dateien (Voreinstellung).
+.TP
+.BI \-game " Datei"
+Lies vordefinierte Spiele aus der
+.I Datei
+(\- bedeutet Standard-Eingabe).
+In IRC-Spielen nicht verfügbar.
+Siehe auch den Abschnitt DATEIEN weiter unten.
+.TP
+.B \-briefmsg
+Zeige durch eine kleine rote Markierung auf den Karten an,
+wer Vorhand ist (beim Reizen) und wer der Alleinspieler ist.
+.TP
+.B \-verbosemsg
+Gib zusätzlich aus, wer wo sitzt und was gespielt wird (Voreinstellung).
+.TP
+.B \-trickl2r
+Lege die Karten eines Stichs von links nach rechts hin (Voreinstellung).
+.TP
+.B \-notrickl2r
+Lege die Karten entsprechend der Spielerpositionen.
+.TP
+.BI \-lang " Sprache"
+Momentan verfügbar: Deutsch und Englisch
+(Voreinstellung: $LANG/$LANGUAGE wird zuerst geprüft.
+Dann: siehe Imakefile/Makefile).
+.TP
+.BI \-start " Spielernummer"
+Der Spieler, der zuerst gibt (Voreinstellung: 2).
+.TP
+.PD 0
+.BI \-s1 " Zahl"
+.TP
+.PD 0
+.BI \-s2 " Zahl"
+.TP
+.PD
+.BI \-s3 " Zahl"
+Ändere die Strategie der Computer-Spieler.
+.br
+.B s1
+ist der linke Computer im Einzelspieler-Modus
+oder der einzige Computer im 2-Spieler-Modus.
+.br
+.B s2
+ist der rechte Computer im Einzelspieler-Modus.
+.br
+.B s3
+ist nur mit
+.B \-auto
+sinnvoll.
+.br
+Die Zahl muß zwischen \-4 und 4 liegen und bedeutet:
+.nf
+.ne 3
+\-4 : Computer paßt gerne.
+ 0 : Normales Verhalten (Voreinstellung).
+ 4 : Computer sagt öfter wenigstens 18.
+.fi
+.TP
+.B \-ramsch
+Spiele einen Ramsch wenn alle Spieler einpassen.
+.br
+Die folgenden Regeln sind momentan implementiert:
+.br
+Der Skat bleibt verdeckt liegen, bis er an den Gewinner des letzten Stichs geht
+(oder an den Verlierer des Spiels, s.u.).
+Der Verlust wird durch die Anzahl der eingefahrenen Kartenpunkte bestimmt.
+Wenn zwei Spieler hierbei Gleichstand haben, verlieren beide.
+Wenn alle gleichauf liegen, wird das Spiel mit 0 bewertet.
+Wenn ein Spieler ohne Stiche bleibt (Jungfrau),
+verdoppelt sich der Verlust des Verlierers.
+Falls aber jemand alle Stiche macht (Durchmarsch), gewinnt er 120 Punkte.
+.TP
+.B \-noramsch
+Spiele keinen Ramsch (Voreinstellung).
+.TP
+.B \-ramschonly
+Spiele jedes Spiel Ramsch.
+.TP
+.B \-sramsch
+Spiele Schieberamsch anstatt einfachen Ramsch.
+.br
+Die Regeln sind:
+.br
+Jeder Spieler, beginnend mit Vorhand, darf den Skat aufnehmen
+und 2 Karten verdeckt weitergeben.
+Es ist nicht erlaubt, Buben zu schieben.
+Der Spielwert wird verdoppelt für jedes Mal,
+das ein Spieler den Skat nicht aufnimmt.
+.TP
+.B \-nosramsch
+Spiele keinen Schieberamsch (Voreinstellung).
+.TP
+.B \-skattoloser
+Am Ende des Ramschspiels geht der Skat an den(die) Verlierer,
+wodurch sich der Verlust erhöht.
+.TP
+.B \-skattolast
+Der Skat geht an den Gewinner des letzten Stichs (Voreinstellung).
+.TP
+.B \-kontra
+Erlaube den Gegnern 'Kontra' zu sagen, was den Wert des Spiels verdoppelt.
+Der Alleinspieler kann mit 'Re' antwortet,
+was eine weitere Verdoppelung bewirkt.
+.TP
+.B \-nokontra
+Verbiete Kontra (Voreinstellung).
+.TP
+.B \-kontra18
+Nur ein Gegner der wenigstens 18 gesagt hat, darf 'Kontra' sagen.
+.TP
+.B \-bock
+Spiele eine Bock-Runde nach einem besonderen Ereignis.
+Der Spielwert der folgenden 3 Spiele wird verdoppelt.
+Wenn innerhalb einer Bock-Runde ein weiteres Bock-Ereignis eintritt
+oder mehrere Bock-Ereignisse gleichzeitig geschehen,
+wird die entsprechende Zahl Bock-Runden zusätzlich gespielt.
+.TP
+.B \-nobock
+Spiele keine Bock-Runden (Voreinstellung).
+.TP
+.B \-bockramsch
+Spiele eine Runde Ramsch nach jeder Bock-Runde.
+Bevor ein Ramsch beginnt, darf jeder Spieler, beginnend mit Vorhand,
+erklären, ob er lieber Grand Hand spielen will.
+Nach einem Grand Hand gibt derselbe Spieler nochmal,
+weil dieses Spiel nicht zu den 3 Spielen der Ramsch-Runde zählt.
+.TP
+.BI \-bockevents " Zahl"
+Spezifiziere die Bock-Ereignisse.
+.nf
+.ne 8
+(1) Ein Spiel wird mit 60 Augen verloren.
+(2) Ein gewonnener Grand Hand.
+(4) Ein erfolgreicher Kontra (Gegner gewinnen).
+(8) Ein Spiel mit Kontra & Re.
+(16) Ein Spielstand endet in 3 gleichen Ziffern.
+(32) Ein Spielstand ist ein Vielfaches von 100.
+(64) Ein mit 72 oder mehr gewonnenes Spiel.
+(128) Ein mit 96 oder mehr gewonnenes Spiel.
+.fi
+Addiere die Zahlen in Klammern um die gewünschten
+Ereignisse festzulegen (Voreinstellung: 0).
+.br
+Anmerkungen:
+.br
+Ein Kontra, in dem der Alleinspieler Re sagte und verlor,
+zählt als ein Ereignis nicht als zwei (Ereignisse 4 und 8).
+.br
+Die Bewertung eines Spielstandes wird entsprechend der eingestellten
+Zählweise von Spieler1 durchgeführt
+(Ereignisse 16 und 32).
+Ein Spielstand, der ein Vielfaches von 1000 ist,
+zählt als ein Ereignis.
+.br
+Als Spielwert (Ereignis 64 und 128) gilt der normale Wert
+ohne irgendwelche Verdoppelungen wegen Ramsch, Kontra oder Bock.
+.TP
+.B \-resumebock
+Setze nicht beendete Bock-Runden beim nächsten Spielstart von
+.BR XSkat
+fort.
+Die Zahl der noch ausstehenden Spiele wird aus der Spiellisten-Datei gelesen.
+.TP
+.B \-noresumebock
+Setze Bock-Runden nicht fort (Voreinstellung).
+.TP
+.B \-spitze
+Erlaube dem Alleinspieler Spitze anzusagen.
+Das bedeutet, daß er den letzte Stich mit dem niedrigsten Trumpf machen muß,
+um das Spiel zu gewinnen.
+Diese Absicht wird erklärt, indem der niedrigste Trumpf
+den anderen Spielern offen gezeigt wird.
+Der Multiplikator für das Spiel erhöht sich dafür um 1.
+In einem Grand mit 4 Buben kann Spitze nicht angesagt werden.
+.TP
+.B \-spitze2
+Spitze erhöht den Multiplikator um 2.
+.TP
+.B \-nospitze
+Die Ansage von Spitze ist nicht möglich (Voreinstellung).
+.TP
+.B \-revolution
+Ermögliche eine besondere Variante von Null Ouvert.
+Nachdem der Alleinspieler die Karten aufgedeckt hat,
+dürfen die Gegner einander in die Karten schauen
+und diese beliebig austauschen bevor das Spiel beginnt.
+Revolution zählt 92 Punkte.
+.TP
+.B \-norevolution
+Verbiete Revolution (Voreinstellung).
+.TP
+.B \-klopfen
+Während einer Ramsch-Runde kann man am Anfang des Spiels klopfen,
+um anzuzeigen, daß man nicht verlieren wird.
+Dies verdoppelt den Spielwert.
+Klopfen ist nicht möglich,
+wenn man den Skat in einem Schieberamsch nicht aufnimmt.
+.TP
+.B \-noklopfen
+Klopfen nicht erlauben (Voreinstellung).
+.TP
+.B \-schenken
+Falls die Gegner am Anfang des Spiels meinen, daß sie nicht gewinnen werden,
+können sie aufgeben.
+Dies geschieht durch Auswahl von Schenken aus dem Hauptmenü
+während des ersten Stiches, statt eine Karte zu spielen.
+Wenn der Alleinspieler dies akzeptiert, gilt das Spiel als einfach gewonnen.
+Sollte er aber darauf bestehen, weiter zu spielen,
+muß er die Gegner dann Schneider machen.
+Dies wird daher wie ein angesagter Schneider bewertet
+(Multiplikator um 2 erhöht).
+Die Gegner können dem Alleinspieler auch den Schneider schenken.
+Dies kann er wieder ablehnen und sagt damit Schwarz an.
+.TP
+.B \-noschenken
+Schenken nicht erlauben (Voreinstellung).
+.TP
+.B \-hint
+Markiere die Karte, die der Computer spielen würde.
+.TP
+.B \-nohint
+Zeige keine Computer-Vorschläge (Voreinstellung).
+.TP
+.B \-newrules
+Neue offizielle Regeln vom 1.1.1999:
+.br
+Verlorene Handspiele zählen doppelt.
+.br
+Der Multiplikator für Grand Ouvert ist 24.
+.br
+(Voreinstellung)
+.TP
+.B \-oldrules
+Verlorene Handspiele zählen einfach.
+.br
+Der Multiplikator für Grand Ouvert ist 36.
+.TP
+.B \-shortcut
+Beende das Spiel, wenn die restlichen Stiche alle an eine Partei gehen.
+.TP
+.B \-noshortcut
+Spiele jeden Stich.
+.TP
+.B \-askshortcut
+Frage, ob die Abkürzung genommen werden soll (Voreinstellung).
+.TP
+.B \-irc
+Spiele via Internet Relay Chat.
+Diese Option stellt eine Verbindung zu einem IRC-Server her,
+wo man mit anderen Leuten eine Runde Skat spielen kann.
+.br
+Und das geht so:
+.br
+Starte
+.B XSkat
+in einem xterm. Warte, bis der Server die Begrüßungsmeldung anzeigt.
+Nun ist man auf dem Kanal #xskat, wo neue Spiele geplant werden sollen.
+Alles was in das xterm getippt wird, wird als Nachricht an alle
+auf diesem Kanal geschickt.
+Wenn sich zwei oder drei Spieler gefunden haben
+und sich auf den Namen für einen neuen Kanal (z.B. #xskat123)
+geeinigt haben, sollten alle den Kanal mit
+.BR /join " #xskat123"
+wechseln.
+Wenn dann alle auf dem neuen Kanal angekommen sind,
+muß genau ein Spieler
+.BR /go " (oder " /go2
+falls nur 2 Spieler da sind) eintippen, um das Spiel zu starten.
+Nun kann man spielen und reden.
+.TP
+.B \-noirc
+Benutze kein IRC (Voreinstellung).
+.TP
+.BI \-irctelnet " Programm"
+Legt das Programm fest, das die Verbindung zum IRC-Server aufbaut.
+Falls man hinter einem Firewall sitzt, ist evtl. ein Programm wie rtelnet
+erforderlich und $SOCKS_SERVER muß auf den Namen des Firewalls
+gesetzt werden (Voreinstellung: telnet).
+.TP
+.BI \-ircserver " Name"
+Wähle einen IRC-Server in der Nähe! (Voreinstellung: $IRCSERVER
+oder irc.fu-berlin.de, falls nicht im  Imakefile/Makefile geändert)
+.TP
+.BI \-ircport " Zahl"
+Der Port des IRC-Servers (Voreinstellung: $IRCPORT oder 6667).
+.TP
+.BI \-ircchannel " Name"
+Der anfänglich aufzusuchende Kanal (Voreinstellung: #xskat).
+.TP
+.BI \-ircnick " Name"
+Der eigene IRC-Name. Falls dieser bereits vergeben ist,
+wird automatisch ein anderer erzeugt.
+Einige Server erlauben Namen mit 30 Zeichen,
+andere haben eine Begrenzung auf 9.
+(Voreinstellung: $IRCNICK oder $IRCUSER oder $LOGNAME oder xskatNNNN).
+.TP
+.BI \-ircuser " Name"
+Der Benutzer/Login-Name. Anmerkung: Viele Server mögen keine gefälschten Namen.
+(Voreinstellung: $IRCUSER oder $LOGNAME).
+.TP
+.BI \-ircrealname " Name"
+Der eigene Name (Voreinstellung: $IRCNAME oder der Eintrag aus der Datei passwd
+oder 'XSkat player').
+.TP
+.BI \-ircpos " Zahl"
+Festlegung der Position relativ zu den anderen Spielern.
+Positionen werden im Uhrzeigersinn mit 1, 2 und 3 bezeichnet.
+Der Spieler 2 beginnt mit Geben,
+falls mit
+.BR \-start " oder " /start
+nichts anderes spezifiziert wird.
+Wenn man seine Position nicht angibt, eine Position doppelt vergeben ist,
+oder eine ungültige Zahl (3 bei nur 2 Spielern) wählt,
+wird dies automatisch korrigiert.
+Die Auswahl der richtigen Position ist wichtig,
+falls ein gespeichertes Spiel fortgesetzt werden soll.
+(Voreinstellung: 0 = egal).
+.TP
+.BI \-irclog " Datei"
+Alle Daten vom/zum IRC-Server werden in diese Datei geschrieben
+(\- bedeutet Standard-Ausgabe).
+Dies kann zur Fehlersuche hilfreich sein
+(Voreinstellung: $HOME/.xskat.ilg oder ./xskat.ilg).
+.TP
+.B \-irclogappend
+Hänge Ausgaben an die Protokolldatei an.
+.TP
+.B \-irclogoverwrite
+Überschreibe eine existierende Datei (Voreinstellung).
+.TP
+.B IRC-Befehle:
+.br
+.BR /nick " Name, " /nick
+\- ändere IRC-Namen oder zeige ihn an.
+.br
+.B /who
+\- wer ist auf dem aktuellen Kanal ?
+.br
+.B /list, /list Text
+\- zeige alle Kanäle an, die das Wort xskat bzw. den Text enthalten.
+Dies kann auf Netzwerken mit vielen Kanälen einige Zeit dauern.
+Der Versuch die Ausgabe zu stoppen, beendet das Programm.
+.br
+.BR /pos " Zahl \- siehe " \-ircpos .
+.br
+.B /bell
+\- Umschalten des akustischen Signals. Wenn eingeschaltet,
+wird jedesmal ein Ton erzeugt, wenn jemand auf dem Kanal hinzukommt
+oder eine Nachricht verschickt.
+Das Signal ist anfänglich aus.
+.br
+.B /quit
+\- beende
+.BR XSkat .
+.br
+.B /sync
+\- falls Nachrichten aufgrund von Netzwerk-Problemen verloren gehen (oder
+weil jemand den Kanal im Spiel wechselte),
+sollte
+.B XSkat
+dies erkennen und in den meisten Fällen die Synchronisation
+automatisch (innerhalb von 30 Sekunden) nach dem Wiederherstellen
+der Verbindung ausführen.
+Die Eingabe von
+.B /sync
+versucht dies sofort.
+.br
+.BR /quote " command args"
+\- für die IRC-Experten.
+.br
+Die folgenden Befehle sind nur sinnvoll für den Spieler,
+der mittels
+.B /go
+das Spiel startet,
+weil dieser die Regeln des Spiels festlegt.
+.br
+.B /default
+\- Spiele nach offiziellen Regeln.
+.br
+.B /ramsch, /sramsch, /skattoloser, /kontra, /bock, /resumebock,
+.B /spitze, /revolution, /klopfen, /schenken, /oldrules,
+.B /bockevents, /alist, /tlist, /start, /s1
+\- ändere die Regeln des Spiels.
+Alle diese Befehle erfordern noch eine Zahl oder True/False,
+genau wie die X11-Resource mit demselben Namen.
+.br
+.B /rules
+\- zeige allen Mitspielern die aktuellen Regeln an.
+.TP
+.B Anmerkungen:
+Die Versionsnummern aller teilnehmenden Programme muß gleich sein.
+.br
+Die meisten Optionen können während des Spiels nicht verändert werden.
+Optionen, die geändert werden können, werden nicht in einer Datei gesichert.
+.br
+Die Spielliste kann nur beim Reizen gelöscht werden, oder wenn man
+eine Karte auszuspielen hat.
+Es gibt eine alternative Spielliste für IRC-Spiele (siehe
+.BR \-list ).
+.br
+Es ist möglich, ins xterm zu tippen oder in das Spiel-Fenster
+(was empfohlen wird),
+aber mitten im Satz zu wechseln, wird nicht funktionieren.
+.br
+Eine bessere Eingabemöglichkeit und einen geteilten Bildschirm bietet
+das Programm ssfe.
+Es wird wie folgt verwendet: ssfe \-raw xskat \-irc
+.br
+Man kann
+.B \-irc
+weglassen, wenn noch andere IRC-Optionen verwendet werden.
+.TP
+.BI \-auto " Zahl"
+Drei Computer spielen die angegebene Anzahl von Spielen gegeneinander.
+Die Resultate werden ausgegeben.
+.br
+Bei diese Option werden keine X11-Resourcen gelesen
+und die Spielliste wird nur gespeichert, wenn
+.B \-list
+verwendet wird.
+.TP
+.BI \-opt " Datei"
+Diese Datei enthält alle interaktiv änderbaren Optionen
+für alle Spieler
+(Voreinstellung: $HOME/.xskat.opt oder ./xskat.opt).
+Kommandozeilen-Optionen haben Vorrang vor
+Optionen aus dieser Datei, welche aber wiederum
+Resource-Angaben überlagern.
+Dies kann mit der Resource
+.B useoptfile
+verändert werden.
+.TP
+.IB Spieler @ Display
+Spezifiziert das Display für den zweiten und dritten Spieler
+(wird aber bei IRC-Spielen ignoriert).
+Der
+.IB Spieler @
+Teil kann weggelassen werden, wenn die Resource
+.B alias
+auf dem
+.I Display
+gesetzt ist.
+.SH RESOURCEN
+.PP
+Kommandozeilen-Optionen haben Vorrang vor Resource-Spezifikationen
+für Spieler1.
+.TP
+.B geometry, font, title, foreground, background
+Die üblichen X11-Resourcen.
+.TP
+.B mark
+(siehe
+.BR \-mark ).
+.TP
+.B button
+(wird für 2D-Tasten verwendet, siehe
+.BR \-bt ).
+.TP
+.B 3dbutton
+(wird für 3D-Tasten verwendet, siehe
+.BR \-bt ,
+Voreinstellung: ein Grauton).
+.TP
+.B 3dbackground
+(wird in 3D-Darstellung verwendet, siehe
+.BR \-bg ,
+Voreinstellung: ein anderes Grau).
+.TP
+.B 3d
+True oder False (siehe
+.BR \-3d " und " \-2d ).
+.TP
+.B 3dtop
+(siehe
+.BR \-3dtop ).
+.TP
+.B 3dbot
+(siehe
+.BR \-3dbot ).
+.TP
+.B menubutton
+(siehe
+.BR \-mb ).
+.TP
+.B keyboard
+(siehe
+.BR \-keyboard ).
+.TP
+.B tdelay
+(siehe
+.BR \-tdelay ).
+.TP
+.B fastdeal
+True oder False (siehe
+.BR \-fastdeal " und " \-slowdeal ).(#)
+.TP
+.B cards
+0, 1, 2 oder 3 (siehe
+.BR \-frenchcards ", " \-french4cards ", "
+.BR \-germancards " und " \-german4cards ).
+.TP
+.B color
+True oder False (siehe
+.BR \-color " und " \-mono ).
+.TP
+.B color1 .. color4
+(siehe
+.BR \-color1 " .. " \-color4 ).
+.TP
+.B large
+True oder False (siehe
+.BR \-large " und " \-small ).
+.TP
+.B down
+True oder False (siehe
+.BR \-down " und " \-up ).
+.TP
+.B alt
+True oder False (siehe
+.BR \-alt " und " \-seq ).
+.TP
+.B list
+(siehe
+.BR \-list ).(#)
+.TP
+.B alist
+True oder False (siehe
+.BR \-alist " und " \-nlist ).
+.TP
+.B tlist
+True oder False (siehe
+.BR \-tlist " und " \-nlist ).
+.TP
+.B log
+(siehe
+.BR \-log ).(#)
+.TP
+.B dolog
+True oder False (siehe
+.BR \-dolog " und " \-nolog ).(#)
+.TP
+.B formatted
+True oder False (siehe
+.BR \-fmt " und " \-unfmt ).(#)
+.TP
+.B game
+(siehe
+.BR \-game ).(#)
+.TP
+.B briefmsg
+True oder False (siehe
+.BR \-briefmsg " und " \-verbosemsg ).
+.TP
+.B trickl2r
+True oder False (siehe
+.BR \-trickl2r " und " \-notrickl2r ).
+.TP
+.B language
+(siehe
+.BR \-lang ).
+.TP
+.B start
+(siehe
+.BR \-start ).(#)
+.TP
+.B s1, s2
+(siehe
+.BR \-s1 ", " \-s2 ).(#)
+.TP
+.B ramsch
+0, 1 oder 2 (siehe
+.BR \-noramsch ", " \-ramsch " und " \-ramschonly ).(#)
+.TP
+.B sramsch
+True oder False (siehe
+.BR \-sramsch " und " \-nosramsch ).(#)
+.TP
+.B skattoloser
+True oder False (siehe
+.BR \-skattoloser " und " \-skattolast ).(#)
+.TP
+.B kontra
+0, 1 oder 2 (siehe
+.BR \-nokontra ", " \-kontra " und " \-kontra18 ).(#)
+.TP
+.B bock
+0, 1 oder 2 (siehe
+.BR \-nobock ", " \-bock " und " \-bockramsch ).(#)
+.TP
+.B bockevents
+(siehe
+.BR \-bockevents ).(#)
+.TP
+.B resumebock
+True oder False (siehe
+.BR \-resumebock " und " \-noresumebock ).(#)
+.TP
+.B spitze
+0, 1 oder 2 (siehe
+.BR \-nospitze ", " \-spitze " und " \-spitze2 ).(#)
+.TP
+.B revolution
+True oder False (siehe
+.BR \-revolution " und " \-norevolution ).(#)
+.TP
+.B klopfen
+True oder False (siehe
+.BR \-klopfen " und " \-noklopfen ).(#)
+.TP
+.B schenken
+True oder False (siehe
+.BR \-schenken " und " \-noschenken ).(#)
+.TP
+.B hint
+True oder False (siehe
+.BR \-hint " und " \-nohint ).
+.TP
+.B oldrules
+True oder False (siehe
+.BR \-oldrules " und " \-newrules ).(#)
+.TP
+.B shortcut
+0, 1 oder 2 (siehe
+.BR \-noshortcut ", " \-askshortcut " und " \-shortcut ).
+.TP
+.B irc
+True oder False (siehe
+.BR \-irc " und " \-noirc ).(#)
+.TP
+.B irctelnet
+(siehe
+.BR \-irctelnet ).(#)
+.TP
+.B ircserver
+(siehe
+.BR \-ircserver ).(#)
+.TP
+.B ircport
+(siehe
+.BR \-ircport ).(#)
+.TP
+.B ircchannel
+(siehe
+.BR \-ircchannel ).(#)
+.TP
+.B ircnick
+(siehe
+.BR \-ircnick ).(#)
+.TP
+.B ircuser
+(siehe
+.BR \-ircuser ).(#)
+.TP
+.B ircrealname
+(siehe
+.BR \-ircrealname ).(#)
+.TP
+.B ircpos
+(siehe
+.BR \-ircpos ).(#)
+.TP
+.B irclist
+(siehe
+.BR \-list ).(#)
+.TP
+.B irclog
+(siehe
+.BR \-irclog ).(#)
+.TP
+.B irclogappend
+True oder False (siehe
+.BR \-irclogappend " und " \-irclogoverwrite ).(#)
+.TP
+.B opt
+(siehe
+.BR \-opt ).(#)
+.TP
+.B useoptfile
+True oder False (Voreinstellung: False).
+Dies ist eine Resource für den Mehrspieler-Modus (aber nicht für IRC).
+Sie wird ignoriert für Spieler1.
+Wenn auf True, wird der Inhalt der Optionsdatei von Spieler1 benutzt.
+Das bedeutete, daß man evtl. an die Einstellungen von sonstwem gerät,
+wenn Spieler1 diese Datei in einem anderem Spiel verwendet hat.
+.TP
+.B alias
+Der Name des Spielers (max. 2 Worte mit je 9 Zeichen,
+Voreinstellung: $LOGNAME).
+.PP
+Nur Spieler1 kann die mit (#) markierten Resourcen setzen.
+.PP
+Dateinamen, die mit ~/ beginnen, werden richtig behandelt,
+falls HOME gesetzt ist.
+.SH DATEIEN
+Ein Beispiel für eine Datei mit vordefinierten Spielen:
+.nf
+
+.ne 7
+# Der folgende Block gibt die Kartenverteilung
+# für Spieler1, 2, 3 und den Skat(0) an.
+# A 10  K  D  B  9  8  7
+  2  2  2  2  2  0  3  3  # Karo
+  2  2  2  2  2  3  3  3  # Herz
+  1  1  1  1  1  3  3  3  # Pik
+  1  1  1  1  1  0  3  3  # Kreuz
+.ne 7
+# Das folgende ist nicht das gleiche Spiel !
+# Spieler-Nummern rotieren 3 -> 2 -> 1 -> 3
+# (und hängen von der start-Option ab).
+  2  2  2  2  2  0  3  3
+  2  2  2  2  2  3  3  3
+  1  1  1  1  1  3  3  3
+  1  1  1  1  1  0  3  3
+.ne 4
+repeat
+# Wiederhole obige Spiele.
+# Die folgenden Zeilen wirken nur,
+# wenn das 'repeat' entfernt wird.
+.ne 9
+random_seed 123456 0 2
+# Spezifiziert die Zufallszahl, welche die
+# Kartenverteilung für alle folgenden Spiele vorgibt.
+# Die zweite Zahl läßt einen entsprechend viele
+# Spiele in der Abfolge überspringen.
+# Die dritte (optionale) Zahl definiert,
+# wer mit dem Geben beginnt (siehe \-start).
+# Ein zusätzliches L oder R hinter dieser Zahl
+# rotiert die Karten links oder rechts herum.
+.ne 3
+# random_seed wird in Spiel-Protokollen angezeigt,
+# um ein einfaches Wiederholen zu ermöglichen:
+# echo random_seed 123456 0 2 | xskat -game -
+.fi
+.SH ANMERKUNGEN
+Es gibt keine offiziellen Regeln für die Varianten Ramsch, Kontra, Bock,
+Spitze, Revolution, Klopfen und Schenken.
+.PP
+Falls der Aufruf
+.BR "xskat player@otherhost:0" " auf " yourhost
+eine Fehlermeldung gibt, kann man versuchen, mit dem Befehl
+.BR "xhost yourhost" " auf " otherhost
+den Zugriff für
+.B yourhost
+auf das Display von
+.B otherhost
+zu erlauben.
+.PP
+Wenn man ein Spiel mit den eigenen Karten wiederholt,
+macht es keinen Unterschied, ob 'Vorhand wechselt'
+auf 'Ja' oder 'Nein' steht.
+.PP
+Einige Versionen von telnet haben einen Fehler, der verhindert,
+daß Eingaben von einer Pipe richtig gelesen werden.
+Siehe README.IRC-de für eine Korrektur oder schreibe in ~/.telnetrc:
+.nf
+
+.ne 3
+irc.fu-berlin.de
+ set echo off
+ set escape off
+ set rlogin off
+ set flushoutput off
+ set interrupt off
+ set quit off
+ set eof off
+ set erase off
+ set kill off
+ set lnext off
+ set susp off
+ set reprint off
+ set worderase off
+ set start off
+ set stop off
+ set forw1 off
+ set forw2 off
+ set ayt off
+
+.fi
+Die führenden Leerzeichen sind wichtig!
+Die IRC-Server-Zeile ist entsprechend anzupassen.
+.SH AUTOR
+Gunter Gerhardt (gerhardt@draeger.com)
+.PP
+Die aktuelle Version liegt immer zuerst unter
+.br
+ftp://ibiblio.org/pub/Linux/Incoming/ und dann in
+.br
+ftp://ibiblio.org/pub/Linux/games/multiplayer/cards/
+.nf
+
+Dieses Programm ist freie Software; es kann frei verbreitet werden.
+Verwendung auf eigenes Risiko; es gibt KEINE GARANTIE.
+
+Die Weitergabe veränderter Versionen ist erlaubt,
+solange die folgenden Bedingungen eingehalten werden:
+1. Alle Angaben zu Copyright & Bedingungen bleiben erhalten.
+2.a) Nur Änderungen zwecks Paketierung oder Portierung werden gemacht.
+  oder
+2.b) Es wird deutlich gekennzeichnet, wer das Programm geändert hat.
+     Das Programm wird umbenannt oder
+     die Versionsnummer hat die Form x.y.z,
+     wobei x.y die Version des originalen Programms ist
+     und z ein beliebiger Zusatz.
+.fi

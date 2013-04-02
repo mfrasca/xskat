@@ -458,9 +458,10 @@ int sn,*s;
 int comp_sramsch(sn)
 int sn;
 {
-  int fb,n,i,j,c,ea,bb;
+  int fb,n,i,j,c,ea,bb,dum;
   int p[4],t[4],s[4],o[4],b[4];
 
+  dum=0;
   n=unsich_fb(sn,s);
   bb=b[0]=b[1]=b[2]=b[3]=0;
   for (i=0;i<10;i++) {
@@ -547,7 +548,7 @@ int sn;
   if (ea<2) {
     for (i=0;i<4;i++) {
       if (t[i]==2 && inhand[i][AS] && inhand[i][ZEHN]) {
-	drueck(i,2);
+	drueck(i,2,&dum);
 	break;
       }
     }
@@ -558,22 +559,22 @@ int sn;
       if (t[i]==n && !s[i]) {
 	if (n==1) {
 	  if (!inhand[i][ACHT]) {
-	    drueck(i,1);
+	    drueck(i,1,&dum);
 	  }
 	}
 	else if (n==2) {
-	  if (inhand[i][SIEBEN] || inhand[i][ACHT]) drueck(i,1);
-	  else drueck(i,2);
+	  if (inhand[i][SIEBEN] || inhand[i][ACHT]) drueck(i,1,&dum);
+	  else drueck(i,2,&dum);
 	}
 	else if (n==3) {
 	  switch (inhand[i][SIEBEN]+inhand[i][ACHT]+inhand[i][NEUN]) {
 	  case 3:break;
-	  case 2:drueck(i,1);break;
-	  default:drueck(i,2);break;
+	  case 2:drueck(i,1,&dum);break;
+	  default:drueck(i,2,&dum);break;
 	  }
 	}
 	else {
-	  drueck(i,2);
+	  drueck(i,2,&dum);
 	}
       }
     }
@@ -595,7 +596,10 @@ VOID ramsch_stich()
   rstsum[ausspl]+=cardw[stcd[0]&7]+cardw[stcd[1]&7]+cardw[stcd[2]&7];
   rstich[ausspl]=1;
   if (stich==10) {
-    rstsum[ausspl]+=cardw[prot2.skat[1][0]&7]+cardw[prot2.skat[1][1]&7];
+    rskatsum=cardw[prot2.skat[1][0]&7]+cardw[prot2.skat[1][1]&7];
+    if (!rskatloser) {
+      rstsum[ausspl]+=rskatsum;
+    }
   }
   if ((stcd[0]&7)==BUBE && (stcd[1]&7)!=BUBE && (stcd[2]&7)!=BUBE) {
     ggdurchm[0]=ggdurchm[1]=ggdurchm[2]=1;
@@ -635,6 +639,13 @@ VOID ramsch_result()
     if (maxn==2) {
       stsum=120-2*stsum;
       spgew=1;
+      if (rskatloser) {
+	spwert+=rskatsum;
+      }
+    }
+    else if (rskatloser) {
+      stsum+=rskatsum;
+      spwert+=rskatsum;
     }
   }
   nspwert=0;

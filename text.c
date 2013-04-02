@@ -27,11 +27,12 @@
 #include "defs.h"
 #include "text.h"
 
-#define VERSION   " X S K A T   3.3 "
+#define VERSION   " X S K A T   3.4 "
 #define COPYRIGHT "Copyright 2000 © Gunter Gerhardt"
 #define EMAIL     "(gerhardt@draeger.com)"
-#define HOMEPAGE  "XSkat Home Page"
-#define URL       "http://www.gulu.net/xskat/"
+#define HOMEPAGES "XSkat Home Pages"
+#define URL1      "http://www.gulu.net/xskat/"
+#define URL2      "http://private.addcom.de/g/xskat/"
 
 static char *ger_text[]={
   "Null","Karo","Herz","Pik","Kreuz","Grand","Ramsch",
@@ -70,7 +71,7 @@ static char *ger_text[]={
   "Gewonnen mit:",
   "Verloren mit:",
   "Spielliste"," Spielliste ",VERSION,
-  COPYRIGHT,EMAIL,HOMEPAGE,URL,
+  COPYRIGHT,EMAIL,HOMEPAGES,URL1,URL2,
   "Sortieren","Aufwärts","Abwärts","Alternierend","Sequentiell",
   "Normal",
   "Gereizt bis:","Gespielt wird:","Letzter Stich:",
@@ -82,6 +83,8 @@ static char *ger_text[]={
   "Optionen"," Computer ","Strategie","passe","sage 18",
   "Vorschläge"," Varianten ",
   "Ramsch spielen","Immer",
+  " Ramsch-Varianten ",
+  "Skat geht an","letzten Stich","Verlierer",
   "Schieberamsch"," Skat aufnehmen ? ","Fertig",
   "Buben dürfen nicht geschoben werden.",
   "Unter dürfen nicht geschoben werden.",
@@ -92,15 +95,17 @@ static char *ger_text[]={
   "Vorhand wechselt:",
   " Geschwindigkeit ","Nimm Stich nach:","Sekunden","Maus-Klick",
   "Abkürzung","Fragen","Nie",
-  "Bock-Runden","+Ramsch","fortsetzen",
+  "Bock-Runden","+Ramsch","Bock-Runden fortsetzen",
   " Bock-Ereignisse ","Bock-Ereignis","%d Bock-Ereignisse",
-  "Bock-Spiele:"," Grand Hand ? ",
+  "Bock-Spiele:"," Grand Hand ? ","   Bock-Spiel   ",
   "Verloren mit 60 Augen","Grand Hand gewonnen",
   "Erfolgreicher Kontra","Kontra & Re angesagt",
   "NNN Punkte in Spielliste","N00 Punkte in Spielliste",
   "Spielwert ist >= +72","Spielwert ist >= +96",
-  " Eingabe ","Tastatur",
-  "Menü-Button","Jeder","und ESC / F1",
+  " Benutzeroberfläche ","Tastatur",
+  "Menü-Taste","Jede",
+  "Wenig Hinweise",
+  "Stich-Karten von links nach rechts",
   "Spitze","zählt 2","Spitze verloren !","Spitze !",
   "Spitze nicht erlaubt !",
   "Niedrigster Trumpf nicht auf der Hand.",
@@ -112,17 +117,18 @@ static char *ger_text[]={
   "Schenken"," Schenken ","Spiel verloren geben ?","Geschenk annehmen ?",
   "Mitspieler lehnt ab.","Gegner geben auf.","Annehmen",
   "Geben","Schnell","Langsam",
-  "Grafik & Text",
+  " Grafik & Text ",
   "Blatt","Französisch","Französisch (4 Farben)",
   "Deutsch","Deutsch (4 Farben)",
   "Sprache","Deutsch","English",
   "Alte Regeln",
-  "Internet Relay Chat",
+  "Ein Maus-Klick oder ESC / F1","bringt dieses Menü zur Anzeige",
+  " Internet Relay Chat ",
   "IRC-Verbindung herstellen mit:",
   "Zur IRC-Konfiguration siehe:",
-  "man xskat",
+  "man xskat-de",
   "Verschiedene Versionen",
-  "(Probleme? README.IRC oder 'man xskat' NOTES lesen!)",
+  "(Probleme? README.IRC-de oder 'man xskat-de' ANMERKUNGEN lesen!)",
   "Nicht auf diesem Kanal !",
   "Nur ein Spieler sollte /go sagen !  Nochmal.",
   "Sollte das /go%s sein ?",
@@ -147,7 +153,7 @@ static char *ger_text[]={
   "/sync - synchronisiere sofort",
   "/quote command args - für Spezialisten",
   "/default - aktiviere offizielle Regeln",
-  "/ramsch n, /sramsch b, /kontra n, /bock n, /resumebock n,",
+  "/ramsch n, /sramsch b, /skattoloser b, /kontra n, /bock n, /resumebock n,",
   " /spitze n, /revolution b, /klopfen b, /schenken b, /oldrules b,",
   " /bockevents n, /alist b, /tlist b, /start n, /s1 n",
   " - ändere Regeln (n ist eine Zahl, b ist true/false)",
@@ -191,7 +197,7 @@ static char *eng_text[]={
   "Won with:",
   "Lost with:",
   "Game list"," Game list ",VERSION,
-  COPYRIGHT,EMAIL,HOMEPAGE,URL,
+  COPYRIGHT,EMAIL,HOMEPAGES,URL1,URL2,
   "Sort","Up","Down","Alternating","Sequential",
   "Normal",
   "Bidding:","Playing:","Last trick:",
@@ -203,6 +209,8 @@ static char *eng_text[]={
   "Options"," Computer ","Strategy","pass","say 18",
   "Hints"," Variations ",
   "Play Ramsch","Always",
+  " Ramsch variations ",
+  "Skat goes to","last trick","loser",
   "Schieberamsch"," Pick up Skat ? ","Done",
   "It's not allowed to pass on jacks.",
   "It's not allowed to pass on unters.",
@@ -213,15 +221,17 @@ static char *eng_text[]={
   "Forehand changes:",
   " Speed ","Take trick after:","seconds","mouse click",
   "Shortcut","Ask","Never",
-  "Bockrounds","+Ramsch","resume",
+  "Bockrounds","+Ramsch","Resume Bockrounds",
   " Bock events ","Bock event","%d Bock events",
-  "Bock games:"," Grand Hand ? ",
+  "Bock games:"," Grand Hand ? ","   Bock game   ",
   "Lost with 60 points","Successful Grand Hand",
   "Successful Kontra","Kontra & Re game",
   "NNN points in game list","N00 points in game list",
   "Game value is >= +72","Game value is >= +96",
-  " Input ","Keyboard",
-  "Menu button","Any","and ESC / F1",
+  " User interface ","Keyboard",
+  "Menu button","Any",
+  "Few messages",
+  "Trick cards from left to right",
   "Spitze","counts 2","Lost Spitze !","Spitze !",
   "Spitze not allowed !",
   "Lowest trump not in your hand.",
@@ -233,12 +243,13 @@ static char *eng_text[]={
   "Schenken"," Schenken ","Give up the game ?","Accept the gift ?",
   "Partner disagrees.","Opponents give up.","Accept",
   "Deal","Fast","Slow",
-  "Graphic & Text",
+  " Graphic & Text ",
   "Cards","French","French (4 colors)",
   "German","German (4 colors)",
   "Language","Deutsch","English",
   "Old rules",
-  "Internet Relay Chat",
+  "A mouse click or ESC / F1","will bring up this menu",
+  " Internet Relay Chat ",
   "Establish IRC connection with:",
   "For IRC configuration see:",
   "man xskat",
@@ -268,7 +279,7 @@ static char *eng_text[]={
   "/sync - synchronize now",
   "/quote command args - for specialists",
   "/default - set the official rules",
-  "/ramsch n, /sramsch b, /kontra n, /bock n, /resumebock n,",
+  "/ramsch n, /sramsch b, /skattoloser b, /kontra n, /bock n, /resumebock n,",
   " /spitze n, /revolution b, /klopfen b, /schenken b, /oldrules b,",
   " /bockevents n, /alist b, /tlist b, /start n, /s1 n",
   " - change the rules of the game (n is a number, b is true/false)",
@@ -279,11 +290,11 @@ tx_typ textarr[TX_NUM_TX];
 
 static struct {
   char **arr;
-  char *name;
+  char *name[NUM_LANG];
   char *langpref[5];
 } textdesc[NUM_LANG] = {
-  {ger_text,"german",{"de","german",0}},
-  {eng_text,"english",{"en",0}}
+  {ger_text,{"deutsch","german"},{"de","german",0}},
+  {eng_text,{"englisch","english"},{"en",0}}
 };
 
 VOID init_text()
@@ -308,17 +319,20 @@ char *s;
   }
   h[i]=0;
   for (i=0;i<NUM_LANG;i++) {
-    if (!strcmp(textdesc[i].name,h)) return i;
+    for (j=0;j<NUM_LANG;j++) {
+      if (!strcmp(textdesc[i].name[j],h)) return i;
+    }
   }
   if (s) {
     fprintf(stderr,"Unknown language '%s'.  Try one of:",h);
     for (i=0;i<NUM_LANG;i++) {
       if (i) fputc(',',stderr);
-      fprintf(stderr," %s",textdesc[i].name);
+      fprintf(stderr," %s",textdesc[i].name[1]);
     }
     fputs(".\n",stderr);
   }
   s=getenv("LANG");
+  if (!s) s=getenv("LANGUAGE");
   if (s) {
     for (i=0;i<79 && s && *s;i++,s++) {
       h[i]=tolower(*s);
@@ -332,7 +346,9 @@ char *s;
     }
   }
   for (i=0;i<NUM_LANG;i++) {
-    if (!strcmp(textdesc[i].name,DEFAULT_LANGUAGE)) return i;
+    for (j=0;j<NUM_LANG;j++) {
+      if (!strcmp(textdesc[i].name[j],DEFAULT_LANGUAGE)) return i;
+    }
   }
   return 0;
 }

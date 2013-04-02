@@ -17,7 +17,7 @@
 .\"      where x.y is the version of the original program
 .\"      and z is an arbitrary suffix.
 .\"
-.TH XSKAT 6 "March 2000"
+.TH XSKAT 6 "October 2000"
 .SH NAME
 xskat \- a card game for 1 to 3 players.
 .SH SYNOPSIS
@@ -52,7 +52,7 @@ xskat \- a card game for 1 to 3 players.
 .RB [ \-keyboard
 .IR number ]
 .RB [ \-tdelay
-.IR sec ]
+.IR seconds ]
 .RB [ \-fastdeal ]
 .RB [ \-slowdeal ]
 .RB [ \-help | \-h ]
@@ -85,6 +85,10 @@ xskat \- a card game for 1 to 3 players.
 .RB [ \-unfmt ]
 .RB [ \-game
 .IR file ]
+.RB [ \-briefmsg ]
+.RB [ \-verbosemsg ]
+.RB [ \-trickl2r ]
+.RB [ \-notrickl2r ]
 .RB [ \-lang
 .IR language ]
 .RB [ \-start
@@ -100,6 +104,8 @@ xskat \- a card game for 1 to 3 players.
 .RB [ \-ramschonly ]
 .RB [ \-sramsch ]
 .RB [ \-nosramsch ]
+.RB [ \-skattolast ]
+.RB [ \-skattoloser ]
 .RB [ \-kontra ]
 .RB [ \-nokontra ]
 .RB [ \-kontra18 ]
@@ -156,13 +162,19 @@ xskat \- a card game for 1 to 3 players.
 .SH DESCRIPTION
 .B XSkat
 lets you play the card game Skat
-as defined by the official German Skatordnung.
+as defined by the official Skat Order.
 .PP
 Up to 3 players may be simulated by the computer.
 .PP
 After starting the game a mouse click or ESC/F1 will bring up a menu.
 Other useful keys are: Space, Return, Tab, Cursor left/right/up/down.
 The rest of the game controls should be fairly obvious.
+.PP
+An introduction to Skat can be found at
+.br
+http://www.gulu.net/xskat/ or
+.br
+http://private.addcom.de/g/xskat/
 .SH OPTIONS
 In the following descriptions, the player starting
 .B XSkat
@@ -213,7 +225,7 @@ or the keyboard focus
 Use a 3D look for dialogs (default).
 .TP
 .B \-2d
-Use the old flat style (default on monochrome screens).
+Use the old, flat style (default on monochrome screens).
 .TP
 .BI \-3dtop " color"
 The color used for the lines around the top and left sides of 3D buttons
@@ -229,7 +241,7 @@ The number of the mouse button that brings up the menu
 .TP
 .BI \-keyboard " number"
 Define how much of the user interface may be controlled by the keyboard.
-The number must be between 0 and 2 and has the following meaning:
+The number has the following meaning:
 .nf
 .ne 3
  0 : Nothing.
@@ -251,7 +263,7 @@ Deal the cards without any time consuming animation.
 Deal the cards slowly (default).
 .TP
 .B \-help
-Show a short help text
+Show a short help text.
 .TP
 .B \-frenchcards
 Play with French suited cards (default).
@@ -337,9 +349,22 @@ Read predefined games from
 Not available for IRC play.
 See also section FILES below.
 .TP
+.B \-briefmsg
+Indicate who is forehand (during bidding) and who is the Soloist
+by displaying a small mark on the back of the cards.
+.TP
+.B \-verbosemsg
+Additionally print out everyones position and what is being played (default).
+.TP
+.B \-trickl2r
+Put down the cards of a trick from left to right (default).
+.TP
+.B \-notrickl2r
+Place the cards corresponding to the players positions.
+.TP
 .BI \-lang " language"
 Currently available: English and German
-(default: $LANG is tried first. Then: see Imakefile/Makefile).
+(default: $LANG/$LANGUAGE is tried first. Then: see Imakefile/Makefile).
 .TP
 .BI \-start " number"
 The player who starts dealing cards (default: 2).
@@ -378,7 +403,8 @@ Play a game of Ramsch when all players pass.
 .br
 The following rules are currently implemented:
 .br
-The Skat remains face down until it goes to the winner of the last trick.
+The Skat remains face down until it goes to the winner of the last trick
+(or to the loser of the game, s.b.).
 The amount lost is the number of card points taken.
 If two players tie for most card points, they both lose.
 If all tie, the score is 0.
@@ -404,6 +430,13 @@ The score is doubled each time a player doesn't pick up the Skat.
 .TP
 .B \-nosramsch
 Don't play Schieberamsch (default).
+.TP
+.B \-skattoloser
+At the end of a Ramsch game the Skat is awarded to the loser(s).
+This will increase the loss.
+.TP
+.B \-skattolast
+The Skat goes to the winner of the last trick (default).
 .TP
 .B \-kontra
 Allow opponents to say 'Kontra' which doubles the score of the game.
@@ -536,6 +569,7 @@ The Grand Ouvert multiplier is 24.
 .TP
 .B \-oldrules
 Lost Hand games count simple.
+.br
 The Grand Ouvert multiplier is 36.
 .TP
 .B \-shortcut
@@ -616,7 +650,7 @@ important if you want to continue with a saved game list
 Everything sent to or received from the IRC server is saved to this file
 (\- means stdout).
 It may be useful for debugging
-(default: $HOME/.xskat.ilg or ./xskat.ilg if HOME isn't set).
+(default: $HOME/.xskat.ilg or ./xskat.ilg).
 .TP
 .B \-irclogappend
 Append output to the log file.
@@ -669,7 +703,7 @@ because that player will determine the rules of the game.
 .B /default
 \- set the official rules.
 .br
-.B /ramsch, /sramsch, /kontra, /bock, /resumebock,
+.B /ramsch, /sramsch, /skattoloser, /kontra, /bock, /resumebock,
 .B /spitze, /revolution, /klopfen, /schenken, /oldrules,
 .B /bockevents, /alist, /tlist, /start, /s1
 \- change the rules of the game.
@@ -690,8 +724,12 @@ to play a card.
 There is a different default game list for IRC games (see
 .BR \-list ).
 .br
-It's possible to type into the xterm or the game window,
+It's possible to type into the xterm or the game window
+(which is recommended),
 but changing input sources in the middle of a line won't work.
+.br
+If you want better input line editing and a split screen try the program ssfe.
+It is used like this: ssfe \-raw xskat \-irc
 .br
 You can omit
 .B \-irc
@@ -709,7 +747,7 @@ is specified.
 .BI \-opt " filename"
 The file for saving/restoring all interactively changeable options
 of all players
-(default: $HOME/.xskat.opt or ./xskat.opt if HOME isn't set).
+(default: $HOME/.xskat.opt or ./xskat.opt).
 Command line options take precedence over
 options specified in this file which in turn override
 resource specifications.
@@ -732,7 +770,7 @@ Command line options take precedence over resource specifications
 for player1.
 .TP
 .B geometry, font, title, foreground, background
-The usual X resources.
+The usual X11 resources.
 .TP
 .B mark
 (see
@@ -833,6 +871,14 @@ True or False (see
 (see
 .BR \-game ).(#)
 .TP
+.B briefmsg
+True or False (see
+.BR \-briefmsg " and " \-verbosemsg ).
+.TP
+.B trickl2r
+True or False (see
+.BR \-trickl2r " and " \-notrickl2r ).
+.TP
 .B language
 (see
 .BR \-lang ).
@@ -852,6 +898,10 @@ True or False (see
 .B sramsch
 True or False (see
 .BR \-sramsch " and " \-nosramsch ).(#)
+.TP
+.B skattoloser
+True or False (see
+.BR \-skattoloser " and " \-skattolast ).(#)
 .TP
 .B kontra
 0, 1 or 2 (see
@@ -991,15 +1041,19 @@ repeat
 # The following lines take effect only
 # when you delete the 'repeat'.
 .ne 9
-random_seed 123456 0
+random_seed 123456 0 2
 # Specifies the random number which determines
 # card distribution for all following games.
 # The second number lets you skip that many
 # games in the sequence.
-# An optional L or R following this number will
+# The third (optional) number defines
+# who will start dealing cards (see \-start).
+# An additional L or R following this number will
 # rotate the cards left or right.
+.ne 3
 # The random_seed will be shown in game logs
-# to allow easy replay.
+# to allow easy replay. Just type:
+# echo random_seed 123456 0 2 | xskat -game -
 .fi
 .SH NOTES
 There are no official rules for the variations Ramsch, Kontra, Bock,
@@ -1052,9 +1106,9 @@ Gunter Gerhardt (gerhardt@draeger.com)
 .PP
 The latest version is always available first at
 .br
-ftp://metalab.unc.edu/pub/Linux/Incoming/ and then at
+ftp://ibiblio.org/pub/Linux/Incoming/ and then at
 .br
-ftp://metalab.unc.edu/pub/Linux/games/multiplayer/cards/
+ftp://ibiblio.org/pub/Linux/games/multiplayer/cards/
 .nf
 
 This program is free software; you can redistribute it freely.

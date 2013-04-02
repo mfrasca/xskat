@@ -1,0 +1,68 @@
+-----------------------------------------------------------
+ ### XSkat-Zeiten: jeden Fr 13:30 und So 18:00 MEZ/MESZ ###
+-----------------------------------------------------------
+
+
+XSkat-IRC und telnet
+====================
+
+Einige Versionen von telnet haben einen Fehler, der verhindert,
+daß Eingaben von einer Pipe richtig gelesen werden.
+Beliebige Zeichen werden in Steuerzeichen umgesetzt (z.B.: 'd' -> 'Ctrl-C').
+Dies liegt daran, daß der Aufruf tcgetattr,
+der die Steuerzeichen des Terminals ermitteln soll,
+ - fehlschlägt, wenn stdin kein TTY ist (was OK ist)
+ - trotzdem die Rückgabewerte modifiziert (was nicht erwartet wurde)
+
+Wer Probleme beim XSkat-Spiel über IRC hat,
+kann telnet ändern oder die unten gezeigte Ersatzlösung ausprobieren.
+
+
+Korrektur des BSD-basierten Linux-telnet
+========================================
+
+--- telnet.98.02.16.NE/telnet/sys_bsd.c~ Mon Feb 16 03:17:37 1998
++++ telnet.98.02.16.NE/telnet/sys_bsd.c  Fri May 28 21:43:51 1999
+@@ -248,9 +248,7 @@
+     nttyb = ottyb;
+ 
+ #else	/* USE_TERMIO */
+-    tcgetattr(0, &old_tc);
+-
+-    new_tc = old_tc;
++    if (!tcgetattr(0, &old_tc)) new_tc = old_tc;
+ 
+ #ifndef	VDISCARD
+     termFlushChar = CONTROL('O');
+
+
+Ersatzlösung
+============
+
+In die Datei ~/.telnetrc kann der folgende Abschnitt eingefügt werden:
+
+irc.fu-berlin.de
+ display
+ set echo ^E
+ set escape ^]
+ set rlogin off
+ set flushoutput ^O
+ set interrupt ^C
+ set quit ^\\
+ set eof ^D
+ set erase ^?
+ set kill ^U
+ set lnext ^V
+ set susp ^Z
+ set reprint ^R
+ set worderase ^W
+ set start ^Q
+ set stop ^S
+ set forw1 off
+ set forw2 off
+ set ayt ^T
+
+Die führenden Leerzeichen sind wichtig!
+Die IRC-Server-Zeile ist entsprechend anzupassen.
+Das display-Kommando kann weggelassen werden.
+Es zeigt lediglich, ob telnet das Problem hat.

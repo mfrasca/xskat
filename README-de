@@ -1,0 +1,21 @@
+
+XSkat ermöglicht es, das Kartenspiel Skat
+entsprechend der offiziellen Skatordnung zu spielen.
+
+Bis zu 3 Spieler können vom Computer simuliert werden.
+
+Dieses Programm ist freie Software; es kann frei verbreitet werden.
+Verwendung auf eigenes Risiko; es gibt KEINE GARANTIE.
+
+Die Weitergabe veränderter Versionen ist erlaubt,
+solange die folgenden Bedingungen eingehalten werden:
+1. Alle Angaben zu Copyright & Bedingungen bleiben erhalten.
+2.a) Nur Änderungen zwecks Paketierung oder Portierung werden gemacht.
+  oder
+2.b) Es wird deutlich gekennzeichnet, wer das Programm geändert hat.
+     Das Programm wird umbenannt oder
+     die Versionsnummer hat die Form x.y.z,
+     wobei x.y die Version des originalen Programms ist
+     und z ein beliebiger Zusatz.
+
+Gunter Gerhardt (gerhardt@draeger.com)

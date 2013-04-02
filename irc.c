@@ -234,6 +234,13 @@ int val;
 	    textarr[TX_NEIN-val].t[lang[0]]);
 }
 
+VOID irc_pr_rskatloser(val)
+int val;
+{
+  irc_pr_ss(textarr[TX_SKAT_GEHT_AN].t[lang[0]],
+	    textarr[val?TX_VERLIERER:TX_LETZTEN_STICH].t[lang[0]]);
+}
+
 VOID irc_pr_kontra(val)
 int val;
 {
@@ -343,11 +350,11 @@ int val;
 VOID irc_showrules(aplayramsch,aplaysramsch,aplaykontra,aplaybock,
 		   aresumebock,aspitzezaehlt,arevolution,aklopfen,
 		   aschenken,abockevents,ageber,aalist,astrateg,
-		   aoldrules)
+		   aoldrules,arskatloser)
 int aplayramsch,aplaysramsch,aplaykontra,aplaybock;
 int aresumebock,aspitzezaehlt,arevolution,aklopfen;
 int aschenken,abockevents,ageber,aalist,astrateg;
-int aoldrules;
+int aoldrules,arskatloser;
 {
   int f=1;
 
@@ -355,6 +362,7 @@ int aoldrules;
     f=0;
     irc_pr_ramsch(aplayramsch);
     irc_pr_sramsch(aplaysramsch);
+    irc_pr_rskatloser(arskatloser);
   }
   if (aplaykontra) {
     f=0;
@@ -398,11 +406,11 @@ VOID irc_sendrules()
 {
   char buf[1024];
 
-  sprintf(buf,"notice %s :/rules %d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
+  sprintf(buf,"notice %s :/rules %d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
 	  irc_channel,
 	  playramsch,playsramsch,playkontra,playbock,
 	  resumebock,spitzezaehlt,revolution,klopfen,
-	  schenken,bockevents,geber,alist[0],strateg[0],oldrules);
+	  schenken,bockevents,geber,alist[0],strateg[0],oldrules,rskatloser);
   irc_out(buf);
 }
 
@@ -556,6 +564,12 @@ char *msg;
 	    irc_pr_sramsch(playsramsch);
 	  }
 	}
+	else if (irc_match("/skattoloser ",&p)) {
+	  if (irc_state==IRC_TALK) {
+	    rskatloser=istrue(p);
+	    irc_pr_rskatloser(rskatloser);
+	  }
+	}
 	else if (irc_match("/kontra ",&p)) {
 	  if (irc_state==IRC_TALK) {
 	    playkontra=atoi(p);
@@ -648,6 +662,7 @@ char *msg;
 	  if (irc_state==IRC_TALK) {
 	    playramsch=playsramsch=playkontra=playbock=resumebock=0;
 	    spitzezaehlt=revolution=klopfen=schenken=bockevents=oldrules=0;
+	    rskatloser=0;
 	    irc_printnl(textarr[TX_OFFIZIELLE_REGELN].t[lang[0]]);
 	  }
 	}
@@ -656,7 +671,7 @@ char *msg;
 	    irc_showrules(playramsch,playsramsch,playkontra,playbock,
 			  resumebock,spitzezaehlt,revolution,klopfen,
 			  schenken,bockevents,geber,alist[0],strateg[0],
-			  oldrules);
+			  oldrules,rskatloser);
 	    irc_sendrules();
 	  }
 	}
@@ -900,17 +915,17 @@ char *q;
   int aplayramsch,aplaysramsch,aplaykontra,aplaybock;
   int aresumebock,aspitzezaehlt,arevolution,aklopfen;
   int aschenken,abockevents,ageber,aalist,astrateg;
-  int aoldrules;
+  int aoldrules,arskatloser;
 
-  sscanf(q,"%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
+  sscanf(q,"%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
 	 &aplayramsch,&aplaysramsch,&aplaykontra,&aplaybock,
 	 &aresumebock,&aspitzezaehlt,&arevolution,&aklopfen,
 	 &aschenken,&abockevents,&ageber,&aalist,&astrateg,
-	 &aoldrules);
+	 &aoldrules,&arskatloser);
   irc_showrules(aplayramsch,aplaysramsch,aplaykontra,aplaybock,
 		aresumebock,aspitzezaehlt,arevolution,aklopfen,
 		aschenken,abockevents,ageber,aalist,astrateg,
-		aoldrules);
+		aoldrules,arskatloser);
 }
 
 VOID irc_getserverconf(q)
@@ -943,10 +958,10 @@ char *q;
     irc_2player=numsp==2;
   }
   else if (f && irc_match("2 ",&q)) {
-    sscanf(q,"%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%ld,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
+    sscanf(q,"%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%ld,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
 	   &playramsch,&playsramsch,&playkontra,&playbock,&resumebock,
 	   &spitzezaehlt,&revolution,&klopfen,&schenken,
-	   &bockevents,&geber,&alist[0],&strateg[0],&oldrules,
+	   &bockevents,&geber,&alist[0],&strateg[0],&oldrules,&rskatloser,
 	   &savseed,&bockspiele,&bockinc,&ramschspiele,
 	   &sum[0][0],&sum[0][1],&sum[0][2],
 	   &sum[1][0],&sum[1][1],&sum[1][2],
@@ -978,11 +993,11 @@ VOID irc_putserverconf()
 	    alist[0],irc_conf[i].nimmstich,irc_conf[i].abkuerz);
     irc_out(buf);
   }
-  sprintf(buf,"notice %s :/svconf2 %d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%ld,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
+  sprintf(buf,"notice %s :/svconf2 %d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%ld,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
 	  irc_channel,
 	  playramsch,playsramsch,playkontra,playbock,resumebock,
 	  spitzezaehlt,revolution,klopfen,schenken,
-	  bockevents,geber,alist[0],strateg[0],oldrules,
+	  bockevents,geber,alist[0],strateg[0],oldrules,rskatloser,
 	  savseed+11,bockspiele,bockinc,ramschspiele,
 	  sum[0][0],sum[0][1],sum[0][2],
 	  sum[1][0],sum[1][1],sum[1][2],
