@@ -1,10 +1,21 @@
 
 /*
     xskat - a card game for 1 to 3 players.
-    Copyright (C) 1998  Gunter Gerhardt
+    Copyright (C) 2000  Gunter Gerhardt
 
     This program is free software; you can redistribute it freely.
     Use it at your own risk; there is NO WARRANTY.
+
+    Redistribution of modified versions is permitted
+    provided that the following conditions are met:
+    1. All copyright & permission notices are preserved.
+    2.a) Only changes required for packaging or porting are made.
+      or
+    2.b) It is clearly stated who last changed the program.
+         The program is renamed or
+         the version number is of the form x.y.z,
+         where x.y is the version of the original program
+         and z is an arbitrary suffix.
 */
 
 #ifndef XIO_H
@@ -12,6 +23,7 @@
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#include "text.h"
 
 #undef EXTERN
 #ifdef XIO_C
@@ -20,7 +32,8 @@
 #define EXTERN extern
 #endif
 
-EXTERN char spnames[3][2][10];
+EXTERN char spnames[3][2][NUM_LANG][10];
+EXTERN tx_typ tspnames[3][2];
 EXTERN int charw[3],charh[3];
 EXTERN int lost[3];
 EXTERN Display *dpy[3];
@@ -32,28 +45,40 @@ EXTERN int gfx3d[3];
 EXTERN GC gc[3],gcbck[3],gcxor[3];
 EXTERN XFontStruct *dfont[3];
 EXTERN Pixmap bck[3];
-EXTERN Pixmap bwcards[3],colcards[3];
+EXTERN Pixmap symbs[3];
+EXTERN Pixmap cardpx[3][33];
 EXTERN Cursor cursor[3][2];
+EXTERN int actbtn[3];
+EXTERN int skatopen,stichopen,spitzeopen,backopen[3];
 EXTERN int ktrply,sptzmrk,schenkply;
 EXTERN int revolsort,tauschcard,tauschdone,tauschply;
 EXTERN long ticker;
 EXTERN char *prog_name;
 EXTERN char *disp_name[3];
 EXTERN char *font_name;
-EXTERN char *title;
+EXTERN char *title[3];
 EXTERN char *fg_col;
 EXTERN char *bg_col;
 EXTERN char *b3d_col;
 EXTERN char *w3d_col;
 EXTERN char *mk_col;
 EXTERN char *bt_col;
-EXTERN char *ccol[20];
+EXTERN char *ccol[4];
+EXTERN int nopre;
 EXTERN int bwcol;
 EXTERN int downup;
 EXTERN int altseq;
-EXTERN int geom_f,geom_x,geom_y;
-EXTERN XSizeHints szhints;
+EXTERN int geom_f[3],geom_x[3],geom_y[3];
+EXTERN int colerr;
+EXTERN XSizeHints szhints[3];
 EXTERN XWMHints wmhints;
+EXTERN struct
+{
+  int num,act;
+  struct {
+    int x1,y1,x2,y2,f;
+  } p[21];
+} selpos[3];
 EXTERN struct
 {
   int large;
@@ -68,7 +93,7 @@ EXTERN struct
   int cardx,cardw,cardh;
   int f,q;
 } desk[3];
-EXTERN XColor color[3][20]
+EXTERN XColor color[3][256]
 #ifdef XIO_C
 =
 {{
@@ -76,22 +101,8 @@ EXTERN XColor color[3][20]
   {0,0xffff,0x0000,0x0000},
   {0,0x0000,0x0000,0x0000},
   {0,0x0000,0x0000,0x0000},
-  {0,0xffff,0xffff,0xffff},
-  {0,0xffff,0x0000,0x0000},
-  {0,0x0000,0xffff,0x0000},
-  {0,0xffff,0xffff,0x0000},
-  {0,0x0000,0x0000,0xffff},
-  {0,0xffff,0xcccc,0xcccc},
-  {0,0x0000,0x0000,0x0000},
-  {0,0xcccc,0xcccc,0xcccc},
-  {0,0x9999,0x9999,0x9999},
-  {0,0x9999,0x0000,0x0000},
-  {0,0x0000,0x9999,0x0000},
-  {0,0x9999,0x9999,0x0000},
-  {0,0x0000,0x0000,0x9999},
-  {0,0x9999,0x0000,0x9999},
-  {0,0x0000,0x9999,0x9999},
-  {0,0x0000,0x0000,0x0000}
+  {0,0xff00,0xb400,0x0000},
+  {0,0x0000,0xb400,0x0000}
 }}
 #endif
 ;
@@ -109,14 +120,14 @@ EXTERN int bigs[]
 #ifdef XIO_C
 =
 {
-  24,39,
-  12,8, 36,8, 24,18, 12,29, 36,29, 12,49, 36,49, 24,60, 12,70, 36,70,
-  12,8, 36,70,
-  12,8, 36,70,
-  9,12, 41,66,
-  12,8, 36,8, 12,29, 36,29, 24,39, 12,49, 36,49, 12,70, 36,70,
-  12,8, 36,8, 24,23, 12,39, 36,39, 24,55, 12,70, 36,70,
-  12,8, 36,8, 24,23, 12,39, 36,39, 12,70, 36,70
+  33,60,
+  15,12, 51,12, 33,27, 15,45, 51,45, 15,75, 51,75, 33,90, 15,105, 51,105,
+  7,9, 60,107,
+  7,9, 60,107,
+  7,9, 60,107,
+  15,12, 51,12, 15,45, 51,45, 33,60, 15,75, 51,75, 15,105, 51,105,
+  15,12, 51,12, 33,36, 15,60, 51,60, 33,84, 15,105, 51,105,
+  15,12, 51,12, 33,36, 15,60, 51,60, 15,105, 51,105
 }
 #endif
 ;
@@ -125,7 +136,16 @@ EXTERN int smls[]
 #ifdef XIO_C
 =
 {
-  5,11, 52,11, 5,76, 52,76
+  2,23, 77,23, 2,105, 77,105
+}
+#endif
+;
+
+EXTERN int smlz[]
+#ifdef XIO_C
+=
+{
+  4,16, 75,16, 4,112, 75,112
 }
 #endif
 ;
@@ -134,7 +154,37 @@ EXTERN int smlc[]
 #ifdef XIO_C
 =
 {
-  5,4, 51,4, 5,84, 51,84
+  6,5, 78,5, 6,126, 78,126
+}
+#endif
+;
+
+EXTERN int frm[2][9][2]
+#ifdef XIO_C
+=
+{
+  {
+    {1,4},{1,3},{2,2},
+    {3,1},{4,1},{0,0},
+    {0,0},{0,0},{0,0}
+  },
+  {
+    {1,7},{1,6},{1,5},
+    {2,4},{3,3},{4,2},
+    {5,1},{6,1},{7,1}
+  }
+}
+#endif
+;
+
+EXTERN int ramp[4][6]
+#ifdef XIO_C
+=
+{
+  {0, 70,100,150,180,255},
+  {0, 70,150,180,255,255},
+  {0, 70,180,255,255,255},
+  {0,180,255,255,255,255}
 }
 #endif
 ;

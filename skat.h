@@ -1,10 +1,21 @@
 
 /*
     xskat - a card game for 1 to 3 players.
-    Copyright (C) 1998  Gunter Gerhardt
+    Copyright (C) 2000  Gunter Gerhardt
 
     This program is free software; you can redistribute it freely.
     Use it at your own risk; there is NO WARRANTY.
+
+    Redistribution of modified versions is permitted
+    provided that the following conditions are met:
+    1. All copyright & permission notices are preserved.
+    2.a) Only changes required for packaging or porting are made.
+      or
+    2.b) It is clearly stated who last changed the program.
+         The program is renamed or
+         the version number is of the form x.y.z,
+         where x.y is the version of the original program
+         and z is an arbitrary suffix.
 */
 
 #ifndef SKAT_H
@@ -77,7 +88,8 @@ EXTERN int reizw[]
   54,55,59,60,63,66,70,72,77,80,81,84,88,90,96,99,
   100,108,110,117,120,121,126,130,132,135,140,143,
   144,150,153,154,156,160,162,165,168,170,171,176,
-  180,187,189,190,192,198,200,204,207,209,210,216
+  180,187,189,190,192,198,200,204,207,209,210,216,
+  220,228,240,264,999
 }
 #endif
 ;
@@ -103,12 +115,17 @@ EXTERN int sortw[]
 EXTERN int numsp,numgames;
 EXTERN int strateg[3],stgset[3];
 EXTERN int hints[3],hintsset[3],hintcard;
+EXTERN int blatt[3],blattset[3];
+EXTERN int lang[3],langset[3];
 EXTERN int maxrw[3],sort1[3],sort2[3],alternate[3],splfirst[3];
 EXTERN int downupset[3],altseqset[3],tdelayset[3],alistset[3];
 EXTERN int mbutton[3],mbuttonset[3];
+EXTERN int keyboard[3],keyboardset[3];
+EXTERN int abkuerz[3],abkuerzset[3];
 EXTERN int useoptfile[3];
 EXTERN int lastmsaho[3],protsort[3],hatnfb[3][5];
 EXTERN int splsum[3][3],sum[3][3],prevsum[3][3],alist[3];
+EXTERN int sgewoverl[3][2],cgewoverl[3][2];
 EXTERN int nimmstich[3][2],playramsch,ramschset;
 EXTERN int playsramsch,sramschset,sramschstufe;
 EXTERN int playkontra,kontraset,kontrastufe;
@@ -119,13 +136,14 @@ EXTERN int spitzezaehlt,spitzezaehltset;
 EXTERN int revolution,revolutionset;
 EXTERN int klopfen,klopfenset;
 EXTERN int schenken,schenkenset,schenkstufe;
+EXTERN int oldrules,oldrulesset;
 EXTERN int fastdeal,fastdealset;
 EXTERN int sagte18[3];
 EXTERN int cards[32],gespcd[32];
 EXTERN int quit,phase,geber,hoerer,sager,spieler;
 EXTERN int saho,reizp,gedr,vmh,stich,ausspl;
 EXTERN int possi[10],possc,stcd[3];
-EXTERN int trumpf,handsp,stsum,spcards[12],kannspitze;
+EXTERN int trumpf,handsp,stsum,gstsum,spcards[12],kannspitze;
 EXTERN int spgew,spwert,schwz,nullv,spitzeok,nspwert;
 EXTERN int schnang,schwang,ouveang,spitzeang,revolang;
 EXTERN struct { int s,r,d,e,g; } splist[360];
@@ -141,6 +159,9 @@ EXTERN char *list_file,*game_file,*prot_file,*opt_file;
 EXTERN int wieder,vorhandwn;
 EXTERN int karobubeanz;
 EXTERN int ndichtw;
+EXTERN int drbut,umdrueck;
+EXTERN int theargc;
+EXTERN char **theargv;
 EXTERN struct
 {
   int stichgem,spieler,trumpf,gereizt,gewonn,augen,ehsso,predef,sramsch;

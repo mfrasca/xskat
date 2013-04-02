@@ -1,10 +1,21 @@
 
 /*
     xskat - a card game for 1 to 3 players.
-    Copyright (C) 1998  Gunter Gerhardt
+    Copyright (C) 2000  Gunter Gerhardt
 
     This program is free software; you can redistribute it freely.
     Use it at your own risk; there is NO WARRANTY.
+
+    Redistribution of modified versions is permitted
+    provided that the following conditions are met:
+    1. All copyright & permission notices are preserved.
+    2.a) Only changes required for packaging or porting are made.
+      or
+    2.b) It is clearly stated who last changed the program.
+         The program is renamed or
+         the version number is of the form x.y.z,
+         where x.y is the version of the original program
+         and z is an arbitrary suffix.
 */
 
 #define NULL_C
@@ -95,9 +106,9 @@ int c;
     m=left(ausspl)!=spieler?left(ausspl):right(ausspl);
     if (hatnfb[m][fb]!=1 && nochinfb[fb]>4) return 2;
   }
-  if (wirftabfb[fb]) return 6;
+  if (wirftabfb[fb]) return 5;
   if (aussplfb[fb]) return 3;
-  if (hattefb[fb]) return 5;
+  if (hattefb[fb]) return 6;
   return 4;
 }
 
