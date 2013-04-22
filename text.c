@@ -176,7 +176,8 @@ static char *ger_text[]={
   " /spitze n, /revolution b, /klopfen b, /schenken b, /oldrules b,",
   " /bockevents n, /alist b, /tlist b, /start n, /s1 n",
   " - ändere Regeln (n ist eine Zahl, b ist true/false)",
-  "/rules - zeige allen Mitspielern aktuelle Regeln an"
+  "/rules - zeige allen Mitspielern aktuelle Regeln an",
+  "mit", "ohne"
 };
 
 static char *eng_text[]={
@@ -324,7 +325,8 @@ static char *eng_text[]={
   " /spitze n, /revolution b, /klopfen b, /schenken b, /oldrules b,",
   " /bockevents n, /alist b, /tlist b, /start n, /s1 n",
   " - change the rules of the game (n is a number, b is true/false)",
-  "/rules - show the current rules to everyone on your channel"
+  "/rules - show the current rules to everyone on your channel",
+  "with", "against"
 };
 
 static struct {

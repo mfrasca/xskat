@@ -176,7 +176,9 @@ enum {
   TX_IRC_HELP14,
   TX_IRC_HELP15,
   TX_IRC_HELPXX,
-  TX_NUM_TX
+  TX_MIT,
+  TX_OHNE,
+  TX_NUM_TX // marker for last unused text
 };
 
 EXTERN tx_typ textarr[TX_NUM_TX];
