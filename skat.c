@@ -1457,14 +1457,14 @@ VOID calc_result()
   if (f==4 && trumpf!=4) { // winner has/misses all 4 Buben and game was not Grand
     while (f<11 && s[f-4]==b[3]) f++;
   }
-  sprintf(explain, "%s %d,", b[3]?textarr[TX_MIT].t[0]:textarr[TX_OHNE].t[0], f);
+  sprintf(explain, "%s %d,", b[3]?textarr[TX_MIT].t[lang[0]]:textarr[TX_OHNE].t[lang[0]], f);
   f++; // for winning the Game
-  strcat(explain, textarr[TX_SPIEL].t[0]);
+  strcat(explain, textarr[TX_SPIEL].t[lang[0]]);
   sprintf(explain_part, "%d", f);
   strcat(explain, explain_part);
   if (handsp) {
       f++; // for playing from Hand
-      sprintf(explain_part, textarr[TX_HAND_GESP].t[0], f);
+      sprintf(explain_part, textarr[TX_HAND_GESP].t[lang[0]], f);
       strcat(explain, explain_part);
   }
   int closing = 0;
@@ -1490,7 +1490,7 @@ VOID calc_result()
   }
   if (closing != 0) {
       strcat(explain, ", ");
-      strcat(explain, textarr[explain_close[closing]].t[0]);
+      strcat(explain, textarr[explain_close[closing]].t[lang[0]]);
       sprintf(explain_part, " %d", f);
       strcat(explain, explain_part);
   }
@@ -1524,9 +1524,10 @@ VOID calc_result()
   if (bockspiele && !ramschspiele) spwert*=2;
 
   if(!spgew) {
-      strcat(explain_part, textarr[TX_VERLOREN].t[0]);
+      strcat(explain_part, ", ");
+      strcat(explain_part, textarr[TX_VERLOREN].t[lang[0]]);
   }
-  sprintf(explain, "%s %d, %s: %s %d.", textarr[1 + trumpf].t[0], rwert[trumpf], explain_part, textarr[TX_DER_SPIELWERT_IST].t[0], spwert);
+  sprintf(explain, "%s %d, %s: %s %d.", textarr[1 + trumpf].t[lang[0]], rwert[trumpf], explain_part, textarr[TX_DER_SPIELWERT_IST].t[lang[0]], spwert);
   printf("%s\n", explain);
 }
 
