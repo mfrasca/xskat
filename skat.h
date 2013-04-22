@@ -159,6 +159,7 @@ EXTERN int butternok,sptruempfe;
 EXTERN int predef,logging,unformatted;
 EXTERN long seed[2],savseed,gamenr,rotateby;
 EXTERN char *list_file,*game_file,*prot_file,*opt_file,*cards_file;
+EXTERN char *spwert_text;
 EXTERN int wieder,vorhandwn;
 EXTERN int karobubeanz;
 EXTERN int ndichtw;
