@@ -1412,6 +1412,8 @@ VOID calc_result()
 {
   int i,c,f;
   int b[4],s[8];
+  char explain[256], explain_part[240];
+  static int explain_close[] = {-1, TX_SCHNEIDER, TX_SCHN_ANGE, TX_SCHWARZ, TX_SCHW_ANGE, TX_OUVERT};
 
   mes1=mes2=mes3=mes4=0;
   if (trumpf==5) {
@@ -1438,7 +1440,7 @@ VOID calc_result()
     schwz=0;
     nullv=1;
   }
-  b[0]=b[1]=b[2]=b[3]=0;
+  b[0]=b[1]=b[2]=b[3]=0; // boolean indicating presence of Bube, b[3] being Eichel
   s[0]=s[1]=s[2]=s[3]=s[4]=s[5]=s[6]=s[7]=0;
   for (i=0;i<12;i++) {
     c=spcards[i];
@@ -1449,17 +1451,51 @@ VOID calc_result()
   s[NEUN]=s[ACHT];
   s[ACHT]=s[SIEBEN];
   f=1;
-  while (f<4 && b[3-f]==b[3]) f++;
-  if (f==4 && trumpf!=4) {
+  // b[3] == 0 => ohne
+  // b[3] == 1 => mit
+  while (f<4 && b[3-f]==b[3]) f++; // count Buben in same status as Eichel
+  if (f==4 && trumpf!=4) { // winner has/misses all 4 Buben and game was not Grand
     while (f<11 && s[f-4]==b[3]) f++;
   }
-  f++;
-  if (handsp) f++;
-  if (stsum>=90 || schnang || stsum<=30) f++;
-  if (schnang) f++;
-  if (schwz || schwang || !nullv) f++;
-  if (schwang) f++;
-  if (ouveang) f++;
+  sprintf(explain, "%s %d,", b[3]?textarr[TX_MIT].t[0]:textarr[TX_OHNE].t[0], f);
+  f++; // for winning the Game
+  strcat(explain, textarr[TX_SPIEL].t[0]);
+  sprintf(explain_part, "%d", f);
+  strcat(explain, explain_part);
+  if (handsp) {
+      f++; // for playing from Hand
+      sprintf(explain_part, textarr[TX_HAND_GESP].t[0], f);
+      strcat(explain, explain_part);
+  }
+  int closing = 0;
+  if (stsum>=90 || schnang || stsum<=30) {
+      f++; // Schneider
+      closing = 1;
+  }
+  if (schnang) {
+      f++; // Schneider angesagt
+      closing = 2;
+  }
+  if (schwz || schwang || !nullv) {
+      f++; // Schwarz
+      closing = 3;
+  }
+  if (schwang) {
+      f++; // Schwarz angesagt
+      closing = 4;
+  }
+  if (ouveang) {
+      f++; // Ouvert
+      closing = 5;
+  }
+  if (closing != 0) {
+      strcat(explain, ", ");
+      strcat(explain, textarr[explain_close[closing]].t[0]);
+      sprintf(explain_part, " %d", f);
+      strcat(explain, explain_part);
+  }
+  strcpy(explain_part, explain);
+
   if (spitzeang) f+=spitzezaehlt;
   if (trumpf==4 && ouveang && oldrules) spwert=(f-1)*36;
   else spwert=f*rwert[trumpf];
@@ -1486,6 +1522,12 @@ VOID calc_result()
   }
   for (i=0;i<kontrastufe;i++) spwert*=2;
   if (bockspiele && !ramschspiele) spwert*=2;
+
+  if(!spgew) {
+      strcat(explain_part, textarr[TX_VERLOREN].t[0]);
+  }
+  sprintf(explain, "%s %d, %s: %s %d.", textarr[1 + trumpf].t[0], rwert[trumpf], explain_part, textarr[TX_DER_SPIELWERT_IST].t[0], spwert);
+  printf("%s\n", explain);
 }
 
 VOID get_next()
