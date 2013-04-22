@@ -178,6 +178,7 @@ enum {
   TX_IRC_HELPXX,
   TX_MIT,
   TX_OHNE,
+  TX_MIT_AUGEN,
   TX_NUM_TX // marker for last unused text
 };
 

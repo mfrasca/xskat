@@ -1527,8 +1527,8 @@ VOID calc_result()
       strcat(explain_part, ", ");
       strcat(explain_part, textarr[TX_VERLOREN].t[lang[0]]);
   }
-  sprintf(explain, "%s %d, %s: %s %d.", textarr[1 + trumpf].t[lang[0]], rwert[trumpf], explain_part, textarr[TX_DER_SPIELWERT_IST].t[lang[0]], spwert);
-  printf("%s\n", explain);
+  sprintf(spwert_text, "%s %d, %s.", textarr[1 + trumpf].t[lang[0]], rwert[trumpf], explain_part);
+  printf("%s\n", spwert_text);
 }
 
 VOID get_next()
@@ -3149,9 +3149,10 @@ int main(argc,argv)
 int argc;
 char *argv[];
 {
-  setrnd(&seed[0],savseed=time((time_t *)0));
-  xinit(theargc=argc,theargv=argv);
-  play();
-  exitus(0);
-  return 0;
+    spwert_text = malloc(256);
+    setrnd(&seed[0],savseed=time((time_t *)0));
+    xinit(theargc=argc,theargv=argv);
+    play();
+    exitus(0);
+    return 0;
 }
