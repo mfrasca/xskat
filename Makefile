@@ -28,6 +28,8 @@ DEFI    = -DDEFAULT_IRC_SERVER=\"irc.fu-berlin.de\"
 SHELL   = /bin/sh
 OBJECTS	= skat.o ramsch.o null.o bitmaps.o xio.o xdial.o irc.o text.o
 
+all: xskat
+
 xskat: $(OBJECTS)
 	$(CC) $(OBJECTS) $(LDFLAGS) -o $@
 

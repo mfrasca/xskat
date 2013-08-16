@@ -27,7 +27,7 @@
 #include "defs.h"
 #include "text.h"
 
-#define VERSION   " X S K A T   4.0 "
+#define VERSION   " X S K A T   4.0.mfrasca "
 #define COPYRIGHT "Copyright 2004 © Gunter Gerhardt"
 #define URL       "http://www.xskat.de"
 
